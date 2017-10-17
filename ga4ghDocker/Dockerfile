@@ -25,7 +25,7 @@ ARG initRepo="FALSE"
 ARG keycloakPort="8080"                    
 ARG ga4ghPort="8000"
 # the source directory on which the ga4gh code resides
-ARG sourceDir="."
+ARG sourceDir=""
 
 ENV keycloakIp=${keycloakIp} clientIp=${clientIp} clientId=${clientId} \ 
 clientSecret=${clientSecret} realmName=${realmName} sourceDirectory=${sourceDirectory} \
@@ -52,8 +52,8 @@ RUN mkdir /var/cache/apache2/python-egg-cache && \
     chown www-data:www-data /var/cache/apache2/python-egg-cache/
 
 # build the GA4GH server
-RUN mkdir -p /srv/ga4gh
-WORKDIR /srv/ga4gh
+RUN mkdir -p /srv/ga4gh/server
+WORKDIR /srv/ga4gh/server
 
 #RUN git clone https://github.com/CanDIG/ga4gh-server.git
 #RUN mv ga4gh-server server
@@ -62,13 +62,15 @@ WORKDIR /srv/ga4gh
 # the script will pull from the candig auth branch if initRepo is TRUE
 # otherwise, the code will be used from sourceDir
 
-./ga4ghInitRepo.sh ${sourceDir} ${initRepo}
+# RUN ./ga4ghInitRepo.sh ${sourceDir} ${initRepo}
 
 # copy the source code into the container
-COPY ${sourceDir} /srv/ga4gh
-RUN mv ga4gh-server server
+COPY ga4gh-server /srv/ga4gh/server
 
-WORKDIR /srv/ga4gh/server
+#RUN ls .
+#RUN mv ga4gh-server server
+
+#WORKDIR /srv/ga4gh/server
 
 # RUN git checkout authentication
 

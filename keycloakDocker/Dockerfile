@@ -4,7 +4,7 @@
 
 # Deploys the keycloak server
 
-FROM centos
+FROM debian
 
 #choose the password and username of the admin account
 #choose the realm name and the client_id to establish
@@ -23,9 +23,13 @@ realmName=${realmName} clientId=${clientId} ga4ghIp=${ga4ghIp} \
 userUsername=${userUsername} userPassword=${userPassword} \
 ga4ghPort=${ga4ghPort}
 
+ENV DEBIAN_FRONTEND noninteractive
+
 # Download and install wget, unzip, and java
 
-RUN yum install -y wget unzip java iproute
+RUN apt-get update -y
+RUN apt-get install -y --no-install-recommends apt-utils
+RUN apt-get install -y wget unzip default-jre default-jdk iproute curl libxml2-utils 
 
 # Go to the home directory
 

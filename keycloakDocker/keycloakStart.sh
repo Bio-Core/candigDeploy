@@ -10,5 +10,7 @@ IP_ADDR=$(ip addr | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' \
 
 # start the keycloak server to listen on the external IP address
 
+echo ${IP_ADDR}
+
 /home/keycloak-3.3.0.CR2/bin/standalone.sh -b ${IP_ADDR}
 

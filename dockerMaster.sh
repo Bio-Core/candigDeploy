@@ -30,6 +30,9 @@ ADMIN_PASSWORD=admin
 USER_USERNAME=user
 USER_PASSWORD=user
 
+SOURCE_DIR=$(pwd)
+INIT_REPO="TRUE"
+
 # usage function explaining how to use the program
 
 display_usage() { 
@@ -162,6 +165,7 @@ docker container rm ${KEYCLOAK_CONTAINER_NAME} ${GA4GH_CONTAINER_NAME}
 # build the keycloak server
 
 KEYCLOAK_DIR="./keycloakDocker/"
+GA4GH_DIR="./ga4ghDocker/"
 
 docker build -t ${KEYCLOAK_IMAGE_NAME} --build-arg ga4ghIp=${GA4GH_IP} \
 --build-arg adminUsername=${ADMIN_USERNAME} --build-arg adminPassword=${ADMIN_PASSWORD} \
@@ -171,8 +175,7 @@ docker build -t ${KEYCLOAK_IMAGE_NAME} --build-arg ga4ghIp=${GA4GH_IP} \
 
 # run the keycloak server
 
-docker run -p ${KEYCLOAK_PORT}:8080 --name ${KEYCLOAK_CONTAINER_NAME} \ 
-${KEYCLOAK_IMAGE_NAME} & 
+docker run -p ${KEYCLOAK_PORT}:8080 --name ${KEYCLOAK_CONTAINER_NAME} ${KEYCLOAK_IMAGE_NAME} & 
 
 # initialize the http request settings
 
@@ -188,7 +191,7 @@ COUNTER=0
 # the counter is used to prevent an infinite loop
 # the program will crash if the server is not accessible by this time
 
-while [ $PINGRESULT -ne 200 -a $COUNTER -le $TIMEOUT ]; do
+while [ $HTTPRESULT -ne 200 -a $COUNTER -le $TIMEOUT ]; do
     HTTPRESULT=$(curl -s -o /dev/null -w "%{http_code}" \
     http://${KEYCLOAK_IP}:${KEYCLOAK_PORT})
     let "COUNTER++"
@@ -203,18 +206,41 @@ SECRET=$(docker exec ${KEYCLOAK_CONTAINER_NAME} cat ${SECRET_FILE})
 
 # remove the secret file
 
-docker exec ${KEYCLOAK_CONTAINER_NAME} rm ${SECRET_FILE}
+docker exec ${KEYCLOAK_CONTAINER_NAME} rm "${SECRET_FILE}"
+
+#SOURCE_DIR="."
+#INIT_REPO="TRUE"
+
+GA4GH_DIR
+
+echo "GA4GH_DIR"
+
+echo "${GA4GH_DIR}"
+
+INIT_DIR="${GA4GH_DIR}/ga4ghInitRepo.sh" 
+
+echo "${INIT_DIR}"
+
+echo $(pwd)
+
+if [ "${INIT_REPO}" == "TRUE" ]; then 
+    chmod +x "${INIT_DIR}"
+    "${INIT_DIR}" "${SOURCE_DIR}"
+fi
+
+
 
 # use the directory containing the GA4GH build scripts and code
-GA4GH_DIR="./ga4ghDocker/"
+#GA4GH_DIR="./ga4ghDocker/"
 
 # build the ga4gh server
 
-docker build -t ${GA4GH_IMAGE_NAME} --build-arg clientSecret=${SECRET} \ 
---build-arg keycloakIp=${KEYCLOAK_IP} --build-arg clientIp=${GA4GH_IP} \
---build-arg clientId=${GA4GH_CLIENT_ID} --build-arg realmName=${GA4GH_REALM_NAME} \
---build-arg keycloakPort=${KEYCLOAK_PORT} ga4ghPort=${GA4GH_PORT} \
-${GA4GH_DIR}
+echo "SOURCE"
+echo "${SOURCE_DIR}"
+
+#SOURCE_DIR_DOCKER=""
+
+docker build -t ${GA4GH_IMAGE_NAME} --build-arg clientSecret=${SECRET} --build-arg keycloakIp=${KEYCLOAK_IP} --build-arg clientIp=${GA4GH_IP} --build-arg clientId=${GA4GH_CLIENT_ID} --build-arg realmName=${GA4GH_REALM_NAME}  --build-arg keycloakPort=${KEYCLOAK_PORT} --build-arg ga4ghPort=${GA4GH_PORT} --build-arg sourceDir="ga4gh-server" "${GA4GH_DIR}"
 
 # run the ga4gh server
 
