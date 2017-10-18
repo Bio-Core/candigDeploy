@@ -22,8 +22,6 @@ git clone --branch authentication https://github.com/CanDIG/ga4gh-server.git "${
 cp ${BASE_DIR}/frontend.py ${SOURCE_DIR}/ga4gh/server/frontend.py
 cp ${BASE_DIR}/serverconfig.py ${SOURCE_DIR}/ga4gh/server/serverconfig.py
 
-
-
 #COPY code   
 
 # change back to the original directory

@@ -205,6 +205,9 @@ SECRET_FILE="/home/secret.txt"
 
 SECRET=$(docker exec ${KEYCLOAK_CONTAINER_NAME} cat ${SECRET_FILE})
 
+echo "SECRET:"
+echo ${SECRET}
+
 # remove the secret file
 
 docker exec ${KEYCLOAK_CONTAINER_NAME} rm "${SECRET_FILE}"

@@ -42,12 +42,17 @@ RUN unzip keycloak-3.3.0.CR2.zip
 
 WORKDIR /home
 
+# copy over the configuration files for keycloak into the container
+
 COPY ./keycloakAdmin.sh /home/keycloakAdmin.sh
 COPY ./keycloakStart.sh /home/keycloakStart.sh
 COPY ./keycloakConfig.json /home/keycloakConfig.json
 
 RUN chmod +x /home/keycloakAdmin.sh
 RUN chmod +x /home/keycloakStart.sh
+
+# execution the configuration on the container
+# the script will import the configuration file into the server
 
 RUN /home/keycloakAdmin.sh ${adminUsername} ${adminPassword} ${realmName} \
 ${clientId} ${ga4ghIp} ${userUsername} ${userPassword} ${ga4ghPort}

@@ -12,18 +12,16 @@ GA4GH_PORT=${8}
 CLIENT_ID_KEYCLOAK="0ef863dc-9f6d-4b7e-a706-4e460b4ba2e4"
 
 # Create the admin account
-/home/keycloak-3.3.0.CR2/bin/add-user-keycloak.sh --user=$ADMIN_USERNAME \
---password=$ADMIN_PASSWORD
+#/home/keycloak-3.3.0.CR2/bin/add-user-keycloak.sh --user=$ADMIN_USERNAME \
+#--password=$ADMIN_PASSWORD
 
 BASE_DIR=$(dirname "$0")
-
 
 CONFIG_FILENAME="keycloakConfig.json"
 CONFIG_FILE="${BASE_DIR}/${CONFIG_FILENAME}"
 
 # start the keycloak server importing the configuration file in detached mode
 /home/keycloak-3.3.0.CR2/bin/standalone.sh -Dkeycloak.migration.action=import -Dkeycloak.migration.provider=singleFile -Dkeycloak.migration.file="${CONFIG_FILE}" -Dkeycloak.migration.strategy=OVERWRITE_EXISTING &
-
 
 # Start the keycloak server on localhost:8080 in Detached mode
 #/home/keycloak-3.3.0.CR2/bin/standalone.sh &
@@ -43,9 +41,6 @@ while [ $PINGRESULT -ne 200 -a $COUNTER -le $TIMEOUT ]; do
     let "COUNTER++" 
     sleep 2
 done
-
-
-
 
 # login as admin
 /home/keycloak-3.3.0.CR2/bin/kcadm.sh config credentials \
@@ -84,6 +79,9 @@ SECRET=$(xmllint --xpath "string(/secure-deployment/credential)" ${SECRET_FILE})
 
 # save the client secret to the file
 # the file is extracted during the docker initialization of the ga4gh server
-echo ${SECRET} > ${SECRET_FILE}
+echo "${SECRET}" > "${SECRET_FILE}"
+
+echo "SECRET:"
+echo "${SECRET}"
 
 exit 0
