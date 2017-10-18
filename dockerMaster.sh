@@ -164,8 +164,9 @@ docker container rm ${KEYCLOAK_CONTAINER_NAME} ${GA4GH_CONTAINER_NAME}
 
 # build the keycloak server
 
-KEYCLOAK_DIR="./keycloakDocker/"
-GA4GH_DIR="./ga4ghDocker/"
+KEYCLOAK_DIR="./keycloakDocker"
+
+GA4GH_DIR="./ga4ghDocker"
 
 docker build -t ${KEYCLOAK_IMAGE_NAME} --build-arg ga4ghIp=${GA4GH_IP} \
 --build-arg adminUsername=${ADMIN_USERNAME} --build-arg adminPassword=${ADMIN_PASSWORD} \
@@ -211,21 +212,34 @@ docker exec ${KEYCLOAK_CONTAINER_NAME} rm "${SECRET_FILE}"
 #SOURCE_DIR="."
 #INIT_REPO="TRUE"
 
-GA4GH_DIR
+#GA4GH_DIR
 
-echo "GA4GH_DIR"
+#echo "GA4GH_DIR"
 
-echo "${GA4GH_DIR}"
+#echo "${GA4GH_DIR}"
 
-INIT_DIR="${GA4GH_DIR}/ga4ghInitRepo.sh" 
+
+#BASE_DIR=$(dirname "${0}")
+
+BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+echo ${BASE_DIR}
+
+INIT_DIR="${BASE_DIR}/ga4ghDocker/ga4ghInitRepo.sh" 
+
+
+
+
 
 echo "${INIT_DIR}"
 
-echo $(pwd)
+#echo $(pwd)
+
+
 
 if [ "${INIT_REPO}" == "TRUE" ]; then 
-    chmod +x "${INIT_DIR}"
-    "${INIT_DIR}" "${SOURCE_DIR}"
+    $(chmod +x "${INIT_DIR}")
+    $(bash -c "${INIT_DIR} ${SOURCE_DIR}/ga4gh-server")
 fi
 
 
@@ -235,8 +249,8 @@ fi
 
 # build the ga4gh server
 
-echo "SOURCE"
-echo "${SOURCE_DIR}"
+#echo "SOURCE"
+#echo "${SOURCE_DIR}"
 
 #SOURCE_DIR_DOCKER=""
 

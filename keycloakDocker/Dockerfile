@@ -44,6 +44,7 @@ WORKDIR /home
 
 COPY ./keycloakAdmin.sh /home/keycloakAdmin.sh
 COPY ./keycloakStart.sh /home/keycloakStart.sh
+COPY ./keycloakConfig.json /home/keycloakConfig.json
 
 RUN chmod +x /home/keycloakAdmin.sh
 RUN chmod +x /home/keycloakStart.sh

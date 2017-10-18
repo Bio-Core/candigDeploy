@@ -9,12 +9,24 @@ USER_USERNAME=${6}
 USER_PASSWORD=${7}
 GA4GH_PORT=${8}
 
+CLIENT_ID_KEYCLOAK="0ef863dc-9f6d-4b7e-a706-4e460b4ba2e4"
+
 # Create the admin account
 /home/keycloak-3.3.0.CR2/bin/add-user-keycloak.sh --user=$ADMIN_USERNAME \
 --password=$ADMIN_PASSWORD
 
+BASE_DIR=$(dirname "$0")
+
+
+CONFIG_FILENAME="keycloakConfig.json"
+CONFIG_FILE="${BASE_DIR}/${CONFIG_FILENAME}"
+
+# start the keycloak server importing the configuration file in detached mode
+/home/keycloak-3.3.0.CR2/bin/standalone.sh -Dkeycloak.migration.action=import -Dkeycloak.migration.provider=singleFile -Dkeycloak.migration.file="${CONFIG_FILE}" -Dkeycloak.migration.strategy=OVERWRITE_EXISTING &
+
+
 # Start the keycloak server on localhost:8080 in Detached mode
-/home/keycloak-3.3.0.CR2/bin/standalone.sh &
+#/home/keycloak-3.3.0.CR2/bin/standalone.sh &
 
 PINGRESULT=1
 TIMEOUT=100
@@ -32,31 +44,34 @@ while [ $PINGRESULT -ne 200 -a $COUNTER -le $TIMEOUT ]; do
     sleep 2
 done
 
+
+
+
 # login as admin
 /home/keycloak-3.3.0.CR2/bin/kcadm.sh config credentials \
 --server http://localhost:8080/auth --realm master \
 --user ${ADMIN_USERNAME} --password ${ADMIN_PASSWORD}
 
 # Create a realm with name REALM_NAME
-/home/keycloak-3.3.0.CR2/bin/kcadm.sh create realms \
--s realm=${REALM_NAME} -s enabled=true
+#/home/keycloak-3.3.0.CR2/bin/kcadm.sh create realms \
+#-s realm=${REALM_NAME} -s enabled=true
 
 # Create a client with client id CLIENT_ID
-CLIENT_ID_KEYCLOAK=$(/home/keycloak-3.3.0.CR2/bin/kcadm.sh \
-create clients -r ${REALM_NAME} -s clientId=${CLIENT_ID} -s enabled=true -i)
+#CLIENT_ID_KEYCLOAK=$(/home/keycloak-3.3.0.CR2/bin/kcadm.sh \
+#create clients -r ${REALM_NAME} -s clientId=${CLIENT_ID} -s enabled=true -i)
 
 # Configure the client with redirect uri http://localhost:8000/* and as baseUrl and adminUrl
-/home/keycloak-3.3.0.CR2/bin/kcadm.sh update clients/${CLIENT_ID_KEYCLOAK} \
--r ${REALM_NAME} -s "redirectUris=[\"http://${GA4GH_IP}:${GA4GH_PORT}/*\"]" \
--s baseUrl=http://${GA4GH_IP}:${GA4GH_PORT}/* -s adminUrl=http://${GA4GH_IP}:${GA4GH_PORT}/* -s publicClient=false
+#/home/keycloak-3.3.0.CR2/bin/kcadm.sh update clients/${CLIENT_ID_KEYCLOAK} \
+#-r ${REALM_NAME} -s "redirectUris=[\"http://${GA4GH_IP}:${GA4GH_PORT}/*\"]" \
+#-s baseUrl=http://${GA4GH_IP}:${GA4GH_PORT}/* -s adminUrl=http://${GA4GH_IP}:${GA4GH_PORT}/* -s publicClient=false
 
 # Create a user
-USER_ID=$(/home/keycloak-3.3.0.CR2/bin/kcadm.sh create users -r ${REALM_NAME} \
--s username=${USER_USERNAME} -s enabled=true -i)
+#USER_ID=$(/home/keycloak-3.3.0.CR2/bin/kcadm.sh create users -r ${REALM_NAME} \
+#-s username=${USER_USERNAME} -s enabled=true -i)
 
 # reset the password
-echo ${USER_PASSWORD} | /home/keycloak-3.3.0.CR2/bin/kcadm.sh set-password \
--r ${REALM_NAME} --userid ${USER_ID}
+#echo ${USER_PASSWORD} | /home/keycloak-3.3.0.CR2/bin/kcadm.sh set-password \
+#-r ${REALM_NAME} --userid ${USER_ID}
 
 SECRET_FILE="secret.txt"
 

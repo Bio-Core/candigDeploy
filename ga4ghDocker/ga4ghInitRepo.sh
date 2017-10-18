@@ -8,19 +8,21 @@
 SOURCE_DIR=${1} 
 
 # save the current directory location
-ORIG_DIR=$(pwd)
+BASE_DIR=$(dirname "${0}")
 
 # go to the source code directory
-cd ${SOURCE_DIR}
+#cd ${SOURCE_DIR}
 
 # clone in the authentication candig branch
-git clone https://github.com/CanDIG/ga4gh-server.git
-cd ga4gh-server
-git checkout authentication   
+git clone --branch authentication https://github.com/CanDIG/ga4gh-server.git "${SOURCE_DIR}"
+#cd ga4gh-server
+#git checkout authentication   
 
 # copy in the modified candig files 
-cp ${ORIG_DIR}/ga4gh-server/frontend.py ${SOURCE_DIR}/ga4gh-server/ga4gh/server/frontend.py
-cp ${ORIG_DIR}/ga4gh-server/serverconfig.py ${SOURCE_DIR}/ga4gh-server/ga4gh/server/serverconfig.py
+cp ${BASE_DIR}/frontend.py ${SOURCE_DIR}/ga4gh/server/frontend.py
+cp ${BASE_DIR}/serverconfig.py ${SOURCE_DIR}/ga4gh/server/serverconfig.py
+
+
 
 #COPY code   
 
