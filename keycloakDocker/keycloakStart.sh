@@ -8,9 +8,13 @@
 IP_ADDR=$(ip addr | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' \
 | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1')
 
+BASE_DIR=$(dirname "$0")
+
+CONFIG_FILENAME="keycloakConfig.json"
+CONFIG_FILE="${BASE_DIR}/${CONFIG_FILENAME}"
+
 # start the keycloak server to listen on the external IP address
 
-echo ${IP_ADDR}
+#echo ${IP_ADDR}
 
-/home/keycloak-3.3.0.CR2/bin/standalone.sh -b ${IP_ADDR}
-
+/home/keycloak-3.3.0.CR2/bin/standalone.sh -b ${IP_ADDR} -Dkeycloak.migration.action=import -Dkeycloak.migration.provider=singleFile -Dkeycloak.migration.file="${CONFIG_FILE}" -Dkeycloak.migration.strategy=OVERWRITE_EXISTING 
