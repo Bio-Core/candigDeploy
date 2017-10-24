@@ -14,12 +14,14 @@ MAINTAINER David Steinberg <david@resium.com>
 
 # the source directory on which the ga4gh code resides
 ARG sourceDir="ga4gh-server"
+ARG dataArg="default"
 ENV sourceDir=${sourceDir}
+ENV dataArg=${dataArg}
 
 # Update the sources list
 
 RUN apt-get update  --fix-missing
-RUN apt-get upgrade --yes
+# RUN apt-get upgrade --yes
 
 # Install packages
 
@@ -57,9 +59,6 @@ RUN pip install .
 # Write new apache config
 RUN cp /srv/ga4gh/server/deploy/001-ga4gh.conf /etc/apache2/sites-available/001-ga4gh.conf
 
-# this deployment is NOT efficient, there are some source files that are not
-# used in deployment still lingering for example, /deploy, /docs
-
 # Write application.wsgi
 RUN cp /srv/ga4gh/server/deploy/application.wsgi /srv/ga4gh/application.wsgi
 RUN cp /srv/ga4gh/server/deploy/config.py /srv/ga4gh/config.py
@@ -78,7 +77,8 @@ EXPOSE 80
 WORKDIR /srv/ga4gh/server
 
 # download and load the compliance data onto the ga4gh server
-RUN python scripts/prepare_compliance_data.py -o ../ga4gh-compliance-data
+RUN python dataPrep.py ${dataArg}
+# RUN python scripts/prepare_compliance_data.py -o ../ga4gh-compliance-data
 
 # eliminate the deployment files that are unnecessary for server operations
 RUN rm -r /srv/ga4gh/server/docs
