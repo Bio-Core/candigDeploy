@@ -6,14 +6,15 @@ import sys
 import shutil
 import os
 import json
+import time
 
 # this program deploys the keycloak and ga4gh server in docker containers
 # the deployment procedure can be configured using command line arguments
 
 # clean up any duplicate containers currently running or stopped
-def containerTeardown(keycloakContainerName, ga4ghContainerName, vagrantDir):
-    subprocess.call(['docker', 'container', 'kill', keycloakContainerName, ga4ghContainerName])
-    subprocess.call(['docker', 'container', 'rm', keycloakContainerName, ga4ghContainerName])
+def containerTeardown(keycloakContainerName, ga4ghContainerName, vagrantDir, funnelContainerName):
+    subprocess.call(['docker', 'container', 'kill', keycloakContainerName, ga4ghContainerName, funnelContainerName])
+    subprocess.call(['docker', 'container', 'rm', keycloakContainerName, ga4ghContainerName, funnelContainerName])
     subprocess.call(['vagrant', 'destroy', '-f', 'default'], cwd=vagrantDir)
     #subprocess.call(['vagrant', 'destroy', '-f', '$(vagrant global-status | grep ga4ghVagrantSingularity | awk \'{print $1;}\')'], cwd=ga4ghSingularityDir)
 
@@ -69,9 +70,10 @@ def singularityDeploy(vagrantDir):
 
     
 # deploy the funnel server
-def funnelDeploy(funnelImageName, funnelContainerName, funnelPort):
-    subprocess.call(['docker', 'build', '-t', funnelImageName])
-    subprocess.Popen(['docker', 'run', '-p', funnelPort + ':3001', '--name', funnelContainerName, funnelImageName])
+def funnelDeploy(funnelImageName, funnelContainerName, funnelPort, funnelDir):
+    print('funnelDeploy')
+    subprocess.call(['docker', 'build', '-t', funnelImageName, funnelDir])
+    subprocess.Popen(['docker', 'run', '-p', funnelPort + ':3002', '--name', funnelContainerName, funnelImageName])
 
 
 # prints the login information post-deployment
@@ -128,14 +130,10 @@ def keycloakConfigWrite(realmName, ga4ghClientID, clientSecret, ga4ghIP, ga4ghPo
 
 
 # writes the keycloak.json file for the funnel client
-def funnelKeycloakConfig(realmName, keycloakIP, keycloakPort):
+def funnelKeycloakConfig(realmName, keycloakIP, keycloakPort, funnelPort, funnelIP, funnelSecret, funnelClientID, funnelDir):
+    print('funnelConfig')
 
     fileName = funnelDir + '/funnel-node/node-client/keycloak.json'
-
-    funnelIP = "127.0.0.1"
-    funnelPort = "3002"
-    funnelSecret = "44f9ebc0-0a21-4044-b93c-f654dcd3f1b9"
-    funnelClientID = "funnel"
 
     authUrl = "http://" + keycloakIP + ":" + keycloakPort + "/auth"
     redirectList = [ "http://" + funnelIP + ":" + funnelPort + "/oidc_callback" ]
@@ -213,30 +211,39 @@ def initSrc(ga4ghDir, ga4ghClientID, clientSecret, ga4ghIP, ga4ghPort, keycloakI
 parser = argparse.ArgumentParser(description='Deployment script for CanDIG which deploys the GA4GH and Keycloak servers', add_help=True)
 
 # defaults
-clientSecret          = '250e42b8-3f41-4d0f-9b6b-e32e09fccaf7'
+clientSecret = '250e42b8-3f41-4d0f-9b6b-e32e09fccaf7'
+funnelSecret = "44f9ebc0-0a21-4044-b93c-f654dcd3f1b9"
 
-parser.add_argument('-i',   '--ip',                                                                            help='Set the ip address of both servers')
-parser.add_argument('-kip', '--keycloak-ip',             default="127.0.0.1",         dest="keycloakIP",                   help='Set the ip address of the keycloak server')
-parser.add_argument('-gip', '--ga4gh-ip',                default="127.0.0.1",         dest="ga4ghIP",               help='Set the ip address of the ga4gh server')
-parser.add_argument('-kp',  '--keycloak-port',           default="8080",                   dest="keycloakPort",                    help='Set the port number of the keycloak server')
-parser.add_argument('-gp',  '--ga4gh-port',              default="8000",                   dest="ga4ghPort",                       help='Set the port number of the ga4gh server')
-parser.add_argument('-r',   '--realm-name',              default="CanDIG",                 dest="realmName",                      help='Set the keycloak realm name')
-parser.add_argument('-gid', '--ga4gh-client-id',         default="ga4ghServer",            dest="ga4ghClientID",          help='Set the ga4gh server client id')
+parser.add_argument('-i',   '--ip',                                                                                      help='Set the ip address of both servers')
+parser.add_argument('-kip', '--keycloak-ip',             default="127.0.0.1",              dest="keycloakIP",            help='Set the ip address of the keycloak server')
+parser.add_argument('-gip', '--ga4gh-ip',                default="127.0.0.1",              dest="ga4ghIP",               help='Set the ip address of the ga4gh server')
+parser.add_argument('-kp',  '--keycloak-port',           default="8080",                   dest="keycloakPort",          help='Set the port number of the keycloak server')
+parser.add_argument('-gp',  '--ga4gh-port',              default="8000",                   dest="ga4ghPort",             help='Set the port number of the ga4gh server')
+parser.add_argument('-r',   '--realm-name',              default="CanDIG",                 dest="realmName",             help='Set the keycloak realm name')
+parser.add_argument('-gid', '--ga4gh-client-id',         default="ga4ghServer",            dest="ga4ghClientID",         help='Set the ga4gh server client id')
 parser.add_argument('-kcn', '--keycloak-container-name', default="keycloak_candig_server", dest="keycloakContainerName", help='Set the keycloak container name')
-parser.add_argument('-gcn', '--ga4gh-container-name',    default="ga4gh_candig_server",    dest="ga4ghContainerName", help='Set the ga4gh server container name')
-parser.add_argument('-kim', '--keycloak-image-name',     default="keycloak_candig_server", dest="keycloakImageName", help='Set the keycloak image tag')
-parser.add_argument('-gim', '--ga4ghImageName',          default="ga4gh_candig_server",    dest="ga4ghImageName",   help='Set the ga4gh image tag')
-parser.add_argument('-au',  '--admin-username',          default="admin",                  dest="adminUsername",                 help='Set the administrator account username')
-parser.add_argument('-uu',  '--user-username',           default="user",                   dest="userUsername",                   help='Set the user account username')
-parser.add_argument('-gs'   '--ga4gh-src',               default="ga4gh-server",           dest="ga4ghSrc",                help='Use an existing source directory')
-parser.add_argument('-o',   '--override',                default=False,                     action='store_true', help="Force the removal of an existing source code directory")
-parser.add_argument('-tt',  '--token-tracer',            default=False, dest='tokenTracer', action='store_true', help='Deploy and run the token tracer program')
-parser.add_argument('-ed',  '--extra-data',              default=False, dest='extraData',   action='store_true', help='Add additional test data to the ga4gh server')
-parser.add_argument('-nd',  '--no-data',                 default=False, dest='noData',      action='store_true', help='Deploy the ga4gh server with no data')
-parser.add_argument('-f',   '--funnel',                  default=False,                     action='store_true', help='Deploy the funnel server')
-parser.add_argument(        'deploy',                                                                          help='Deploy the Keycloak and GA4GH server')
-parser.add_argument('-s',   '--singularity',             default=False,                     action='store_true', help='Deploy using singularity containers')
-parser.add_argument('-cs',  '--client-secret',           default=clientSecret, dest='clientSecret',              help="Client secret for the ga4gh server")
+parser.add_argument('-gcn', '--ga4gh-container-name',    default="ga4gh_candig_server",    dest="ga4ghContainerName",    help='Set the ga4gh server container name')
+parser.add_argument('-kin', '--keycloak-image-name',     default="keycloak_candig_server", dest="keycloakImageName",     help='Set the keycloak image tag')
+parser.add_argument('-gin', '--ga4gh-image-name',        default="ga4gh_candig_server",    dest="ga4ghImageName",        help='Set the ga4gh image tag')
+parser.add_argument('-au',  '--admin-username',          default="admin",                  dest="adminUsername",         help='Set the administrator account username')
+parser.add_argument('-uu',  '--user-username',           default="user",                   dest="userUsername",          help='Set the user account username')
+parser.add_argument('-gs',  '--ga4gh-src',               default="ga4gh-server",           dest="ga4ghSrc",              help='Use an existing source directory')
+parser.add_argument('-o',   '--override',                default=False,                     action='store_true',         help="Force the removal of an existing source code directory")
+parser.add_argument('-t',   '--token-tracer',            default=False, dest='tokenTracer', action='store_true',         help='Deploy and run the token tracer program')
+parser.add_argument('-ed',  '--extra-data',              default=False, dest='extraData',   action='store_true',         help='Add additional test data to the ga4gh server')
+parser.add_argument('-nd',  '--no-data',                 default=False, dest='noData',      action='store_true',         help='Deploy the ga4gh server with no data')
+parser.add_argument('-f',   '--funnel',                  default=False,                     action='store_true',         help='Deploy the funnel server')
+parser.add_argument(        'deploy',                                                                                    help='Deploy the Keycloak and GA4GH server')
+parser.add_argument('-s',   '--singularity',             default=False,                     action='store_true',         help='Deploy using singularity containers')
+parser.add_argument('-cs',  '--client-secret',           default=clientSecret,             dest='clientSecret',          help="Client secret for the ga4gh server")
+parser.add_argument('-fin', '--funnel-image-name',       default="funnel_candig_server",   dest="funnelImageName",       help='Set the funnel image tag')
+parser.add_argument('-fcn', '--funnel-container-name',   default="funnel_candig_server",   dest="funnelContainerName",   help='Set the funnel container name')
+parser.add_argument('-fp',  '--funnel-port',             default="3002",                   dest="funnelPort",            help='Set the funnel port number')
+parser.add_argument('-fip', '--funnel-ip',               default="127.0.0.1",              dest="funnelIP",              help='Set the funnel ip address')
+parser.add_argument('-fs',  '--funnel-secret',           default=funnelSecret,             dest="funnelSecret",              help='Set the funnel client secret')
+parser.add_argument('-fid', '--funnel-client-id',        default="funnel",                 dest="funnelClientID",        help='Set the funnel client id')
+parser.add_argument('-ng', '--no-ga4gh',        default=False,                 dest="noGa4gh", action='store_true',      help="Do not deploy the GA4GH server")
+
 #parser.add_argument('-nk',  '--no-keycloak', default=False, dest=noKeycloak, action='store_true', help="Do not deploy Keycloak")
 #parser.add_argument('-ck', '--config-keycloak', default=False, dest=configKeycloak, action='store_true', help='Reconfigure keycloak only - do not reinstall')
 #parser.add_argument('-oc',  '--config-override', default=False, dest='configOverride', action='store_true', help="Overwrite the client secrets file for an existing repository")
@@ -252,8 +259,9 @@ initRepo              = True                     # flag as to whether to clone i
 #configOnly = False 
 dataArg = 'default'
 keycloakDir = "./keycloak"
-ga4ghDir = "./ga4ghSrc"
+ga4ghDir = "./ga4gh"
 vagrantDir = './vagrant'
+funnelDir="./funnel"
 
 # parse for command line arguments
 args = parser.parse_args()
@@ -269,17 +277,13 @@ if args.singularity:
 
 # initiate the deployment procedure if deploy has been specified
 if args.deploy:
-    containerTeardown(args.keycloakContainerName, args.ga4ghContainerName, vagrantDir)
+    containerTeardown(args.keycloakContainerName, args.ga4ghContainerName, vagrantDir, args.funnelContainerName)
  
     keycloakConfigWrite(args.realmName, args.ga4ghClientID, args.clientSecret, args.ga4ghIP,\
                         args.ga4ghPort, args.adminUsername, args.userUsername, keycloakDir)
 
     if (not args.singularity):
         keycloakDeploy(args.keycloakImageName, args.keycloakContainerName, keycloakDir, args.keycloakPort)
-
-    # clone the tokenTracer into the keycloak container if enabled
-    if args.tokenTracer:
-        subprocess.call(["docker", "exec", args.keycloakContainerName, "git clone https://github.com/Bio-Core/tokenTracer.git"])
 
     # initialize the repository containing the ga4gh source code locally if unspecified
     if args.ga4ghSrc == 'ga4gh-server':   
@@ -288,7 +292,7 @@ if args.deploy:
 
     if args.singularity:        
         singularityDeploy(vagrantDir)
-    else:
+    elif (not args.noGa4gh):
         ga4ghDeploy(args.ga4ghImageName, args.ga4ghContainerName, ga4ghDir, args.ga4ghPort,\
                     args.ga4ghSrc)
 
@@ -297,11 +301,17 @@ if args.deploy:
                 args.userUsername, userPassword, args.adminUsername, adminPassword)
 
     if args.funnel:
-        funnelDeploy()
+        funnelKeycloakConfig(args.realmName, args.keycloakIP, args.keycloakPort, args.funnelPort, args.funnelIP, args.funnelSecret, args.funnelClientID, funnelDir)
+        funnelDeploy(args.funnelImageName, args.funnelContainerName, args.funnelPort, funnelDir)
 
 
     # execute the tokenTracer if enabled
     if args.tokenTracer: 
-        subprocess.call(["docker", "exec", args.keycloakContainerName, "pyparse.py"])
+        time.sleep(5)
+        print('tokenTracer')
+        subprocess.call(["docker", "exec", args.keycloakContainerName, "apt-get install -y python python-pip git"])
+        subprocess.call(["docker", "exec", args.keycloakContainerName, "git clone https://github.com/Bio-Core/tokenTracer.git"])
+        subprocess.call(["docker", "exec", args.keycloakContainerName, "pip install pyshark"])
+        subprocess.call(["docker", "exec", args.keycloakContainerName, "python", "/home/tokenTracer/pyparseLive.py"])
  
 exit()

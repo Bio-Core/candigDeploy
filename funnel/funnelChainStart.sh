@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # start the funnel server in the background
-/home/funnel/funnel-linux-amd64 server & 
+/home/funnel-linux-amd64 server & 
 
 # start the node-resource server in background
 npm start /home/funnel-node/node-resource & 

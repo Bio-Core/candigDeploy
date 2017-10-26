@@ -1,0 +1,1 @@
+{"resource": "funnel", "auth-server-url": "http://127.0.0.1:8080/auth", "redirect_uris": ["http://127.0.0.1:3002/oidc_callback"], "realm": "CanDIG", "credentials": {"secret": "44f9ebc0-0a21-4044-b93c-f654dcd3f1b9"}}
