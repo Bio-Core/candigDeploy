@@ -12,25 +12,23 @@ RUN apt-get update -y
 RUN apt-get install -y --no-install-recommends apt-utils
 RUN apt-get install -y wget unzip default-jre default-jdk iproute curl libxml2-utils 
 
-# Go to the home directory
-WORKDIR /home
+# Go to the srv directory
+WORKDIR /srv
 
 # Download and unzip Keycloak
 RUN wget https://downloads.jboss.org/keycloak/3.3.0.CR2/keycloak-3.3.0.CR2.zip
 RUN unzip keycloak-3.3.0.CR2.zip
 
-WORKDIR /home
-
 # copy over the configuration files for keycloak into the container
-COPY ./keycloakStart.sh /home/keycloakStart.sh
-COPY ./keycloakConfig.json /home/keycloakConfig.json
+COPY ./keycloakStart.sh /srv/keycloakStart.sh
+COPY ./keycloakConfig.json /srv/keycloakConfig.json
 
-RUN chmod +x /home/keycloakStart.sh
+RUN chmod +x /srv/keycloakStart.sh
 
 # Start keycloak when the container is run
 # the keycloakStart.sh script determines the local IP on which
 # the keycloak server should listen
-CMD ["/home/keycloakStart.sh"]
+CMD ["/srv/keycloakStart.sh"]
 
 
 

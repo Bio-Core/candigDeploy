@@ -1,0 +1,39 @@
+# Deploys the keycloak server
+BootStrap: docker
+From: ubuntu:latest
+
+%environment
+
+    DEBIAN_FRONTEND=noninteractive
+
+%setup
+
+    cp keycloakStart.sh ${SINGULARITY_ROOTFS}
+    cp keycloakConfig.json ${SINGULARITY_ROOTFS}
+
+%post
+
+    # Download and install wget, unzip, and java
+    apt-get update -y
+    apt-get install -y --no-install-recommends apt-utils
+    apt-get install -y wget unzip default-jre default-jdk iproute curl libxml2-utils 
+
+    # Go to the srv directory
+    cd /srv
+
+    # Download and unzip Keycloak
+    wget https://downloads.jboss.org/keycloak/3.3.0.CR2/keycloak-3.3.0.CR2.zip
+    unzip keycloak-3.3.0.CR2.zip
+
+    mv /keycloakStart.sh /srv/keycloakStart.sh
+    mv /keycloakConfig.json /srv/keycloakConfig.json
+
+    chmod +x /srv/keycloakStart.sh
+
+%runscript
+
+    # Start keycloak when the container is run
+    # the keycloakStart.sh script determines the local IP on which
+    # the keycloak server should listen
+    # exec /srv/keycloakStart.sh 
+    exec /srv/keycloak-3.3.0.CR2/bin/standalone.sh -b 192.168.12.123 -Dkeycloak.migration.action=import -Dkeycloak.migration.provider=singleFile -Dkeycloak.migration.file=/srv/keycloakConfig.json -Dkeycloak.migration.strategy=OVERWRITE_EXISTING 

@@ -50,7 +50,7 @@ COPY ga4gh-server /srv/ga4gh/server
 # to the GA4GH Server codebase do not trigger a full rebuild of the
 # pip requirements.
 
-COPY requirements.txt /srv/ga4gh/server/
+# COPY requirements.txt /srv/ga4gh/server/
 RUN pip install -r requirements.txt
 
 # install the code

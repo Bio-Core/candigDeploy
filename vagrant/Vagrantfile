@@ -1,0 +1,75 @@
+Vagrant.configure("2") do |config|
+
+  config.vm.box = "bento/ubuntu-16.04"
+
+  config.vm.network "forwarded_port", guest: 8000, host: 8000
+  config.vm.network "forwarded_port", guest: 8080, host: 8080
+
+  config.vm.network "private_network", ip: "192.168.12.123"
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.customize ["modifyvm", :id, "--cableconnected1", "on"]
+  end
+
+  # copy files into vagrant container
+  config.vm.synced_folder "../ga4ghSrc/ga4gh-server", "/home/vagrant/ga4gh-server"
+  config.vm.provision "file", source: "../ga4ghSrc/Singularity", destination: "Singularity"
+  config.vm.provision "file", source: "../ga4ghSrc/ports.conf", destination: "ports.conf"
+  config.vm.provision "file", source: "../ga4ghSrc/001-ga4gh.conf", destination: "001-ga4gh.conf"
+  config.vm.provision "file", source: "../keycloak/keycloakSingularity", destination: "keycloakSingularity"
+  config.vm.provision "file", source: "../keycloak/keycloakConfig.json", destination: "keycloakConfig.json"
+  config.vm.provision "file", source: "../keycloak/keycloakStart.sh", destination: "keycloakStart.sh"
+
+  config.vm.provision "shell" do |s|
+    s.inline = %Q(
+
+    cd /home/vagrant
+
+    # install tools needed for singularity make
+    apt-get update  --fix-missing
+    apt-get install -y python dh-autoreconf build-essential squashfs-tools
+
+    # clone & make & install singularity
+    git clone https://github.com/singularityware/singularity.git 
+    
+    cd /home/vagrant/singularity
+    ./autogen.sh
+    ./configure --prefix=/usr/local --sysconfdir=/etc
+    make
+    make install
+
+    # create, bootstrap/build singularity ga4gh image and then run container
+
+    cd /home/vagrant/
+
+    sudo singularity build --writable keycloak.img keycloakSingularity
+    sudo singularity build --writable ga4gh-server.img Singularity
+
+    #sudo singularity run keycloak.img 
+
+    #sudo singularity run ga4gh-server.img 
+
+    # start apache server inside
+    #sudo singularity exec ga4gh-server.img /usr/sbin/apache2ctl start &
+
+    echo "Vagrant-End"
+
+    )
+  end
+
+  config.vm.provision "shell", inline: "ls"
+
+  config.vm.provision "shell", inline: "echo TEST"
+
+  config.vm.provision "shell", inline: "sudo echo TESTSUDO"
+  config.vm.provision "shell", inline: "sudo singularity"
+
+  config.vm.provision "shell", inline: "echo $(sudo singularity)"
+
+  config.vm.provision "shell", inline: "echo $(sudo singularity run)"
+
+  config.vm.provision "shell", inline: "sudo singularity run ga4gh-server.img"
+
+  config.vm.provision "shell", inline: "sudo singularity run keycloak.img"    
+
+end

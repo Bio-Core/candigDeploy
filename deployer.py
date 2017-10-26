@@ -11,41 +11,66 @@ import json
 # the deployment procedure can be configured using command line arguments
 
 # clean up any duplicate containers currently running or stopped
-def containerTeardown(keycloakContainerName, ga4ghContainerName):
+def containerTeardown(keycloakContainerName, ga4ghContainerName, vagrantDir):
     subprocess.call(['docker', 'container', 'kill', keycloakContainerName, ga4ghContainerName])
     subprocess.call(['docker', 'container', 'rm', keycloakContainerName, ga4ghContainerName])
+    subprocess.call(['vagrant', 'destroy', '-f', 'default'], cwd=vagrantDir)
+    #subprocess.call(['vagrant', 'destroy', '-f', '$(vagrant global-status | grep ga4ghVagrantSingularity | awk \'{print $1;}\')'], cwd=ga4ghSingularityDir)
 
 # deploys the keycloak server
 # builds the keyserver docker image and runs it
-def keycloakDeploy(keycloakImageName, keycloakContainerName, keycloakDirectory, keycloakPort):
-
-    buildKeycloakCode = subprocess.call(['docker', 'build', '-t', keycloakImageName, keycloakDirectory])
+def keycloakDeploy(keycloakImageName, keycloakContainerName, keycloakDir, keycloakPort):
+    buildKeycloakCode = subprocess.call(['docker', 'build', '-t', keycloakImageName, keycloakDir])
     # check if docker is working
     # abort if docker fails or is inaccessible
     if buildKeycloakCode != 0:
         print("ERROR: Docker build has failed to build image.")
         exit(1)
-
     # we need to capture port errors!
     # without interrupting the server
     # run the keycloak server as a background process
-
     subprocess.Popen(['docker', 'run', '-p', keycloakPort + ':8080', '--name', keycloakContainerName, keycloakImageName])
     
 # deploys the ga4gh server
 # builds the ga4gh server docker image and runs it
-def ga4ghDeploy(ga4ghImageName, ga4ghContainerName, ga4ghDirectory, ga4ghPort, ga4ghSrc):
+def ga4ghDeploy(ga4ghImageName, ga4ghContainerName, ga4ghDir, ga4ghPort, ga4ghSrc):
     # build the ga4gh server
     srcArg = 'sourceDir=' + ga4ghSrc
-    subprocess.call(['docker',  'build', '-t', ga4ghImageName, '--build-arg', srcArg, ga4ghDirectory])
+    # copy in the files
+    #shutil.copyfile(ga4ghDir + '/frontend.py', ga4ghDockerDir + '/ga4gh/server/frontend.py')
+    #shutil.copyfile(ga4ghDir + '/serverconfig.py', ga4ghDockerDir + '/ga4gh/server/serverconfig.py')
+    #shutil.copyfile(ga4ghDir + '/dataPrep.py', ga4ghDockerDir + '/dataPrep.py')
+    #shutil.copyfile(ga4ghDir + '/requirements.txt', ga4ghDockerDir + '/requirements.txt')
 
+    # check for a duplicate source code directory for Docker to copy
+    # overwrite it if it exists
+    #duplicateDir = os.path.exists(ga4ghDockerDir + '/' + ga4ghSrc)
+    #if duplicateDir:
+    #    shutil.rmtree(ga4ghDockerDir + '/' + ga4ghSrc) 
+    #shutil.copytree(ga4ghDir + '/' + ga4ghSrc, ga4ghDockerDir + '/' + ga4ghSrc)
+  
+    subprocess.call(['docker',  'build', '-t', ga4ghImageName, '--build-arg', srcArg, ga4ghDir])
     # run the ga4gh server
     subprocess.Popen(['docker', 'run', '-p', ga4ghPort + ':80', '--name', ga4ghContainerName, ga4ghImageName])
 
+
+# deploy ga4gh via singularity through a vagrant container
+# we should also have an option that deploys them directly via singularity
+# this would require us to test it in a linux environment
+def singularityDeploy(vagrantDir):
+    # os.environ["SECRET"] = clientSecret
+    # os.environ["KEYCLOAK_IP"] = keycloakIP 
+    # os.environ["GA4GH_IP"] = ga4ghIP 
+    # os.environ["GA4GH_CLIENT_ID"] = ga4ghClientID 
+    # os.environ["GA4GH_REALM_NAME"] = realmName 
+    subprocess.call(['vagrant', 'up'], cwd=vagrantDir)
+    #subprocess.call(['vagrant', 'ssh', '--command', 'sudo singularity run keycloak.img'], cwd=vagrantDir)
+    #subprocess.call(['vagrant', 'ssh', '--command', 'sudo singularity run ga4gh-server.img'], cwd=vagrantDir)
+
+    
 # deploy the funnel server
 def funnelDeploy(funnelImageName, funnelContainerName, funnelPort):
     subprocess.call(['docker', 'build', '-t', funnelImageName])
-
     subprocess.Popen(['docker', 'run', '-p', funnelPort + ':3001', '--name', funnelContainerName, funnelImageName])
 
 
@@ -72,8 +97,8 @@ def printDeploy(keycloakImageName, keycloakContainerName, keycloakIP, keycloakPo
 # writes the keycloak.json configuration file
 # the configuration file determines the realms, clients, 
 # and users that exist on the server and their settings
-def keycloakConfigWrite(realmName, ga4ghClientID, clientSecret, ga4ghIP, ga4ghPort, adminUsername, userUsername):
-    keycloakConfigFile = './keycloakDocker/keycloakConfig.json'
+def keycloakConfigWrite(realmName, ga4ghClientID, clientSecret, ga4ghIP, ga4ghPort, adminUsername, userUsername, keycloakDir):
+    keycloakConfigFile = keycloakDir + '/keycloakConfig.json'
     with open(keycloakConfigFile, 'r+') as configFile:
         configData = json.load(configFile)
 
@@ -93,7 +118,6 @@ def keycloakConfigWrite(realmName, ga4ghClientID, clientSecret, ga4ghIP, ga4ghPo
         configData[0]['clients'][5]['baseUrl'] = '/auth/admin/' + realmName + '/console/index.html'
         configData[0]['clients'][5]['redirectUris']  = ['/auth/admin/' + realmName + '/console/*']
 
-
         #configData['users'][n]['password']= "user"                                                                                                  
         #configFile.seek(0) # reset position to start
 
@@ -101,10 +125,35 @@ def keycloakConfigWrite(realmName, ga4ghClientID, clientSecret, ga4ghIP, ga4ghPo
     with open(keycloakConfigFile, 'w') as configFile:
         json.dump(configData, configFile, indent=1)
 
+
+
+# writes the keycloak.json file for the funnel client
+def funnelKeycloakConfig(realmName, keycloakIP, keycloakPort):
+
+    fileName = funnelDir + '/funnel-node/node-client/keycloak.json'
+
+    funnelIP = "127.0.0.1"
+    funnelPort = "3002"
+    funnelSecret = "44f9ebc0-0a21-4044-b93c-f654dcd3f1b9"
+    funnelClientID = "funnel"
+
+    authUrl = "http://" + keycloakIP + ":" + keycloakPort + "/auth"
+    redirectList = [ "http://" + funnelIP + ":" + funnelPort + "/oidc_callback" ]
+    secretDict = { "secret" : funnelSecret } 
+
+    keycloakData = { "realm" : realmName, "auth-server-url": authUrl, "resource" : funnelClientID, "redirect_uris" : redirectList, "credentials" : secretDict }
+
+    jsonData = json.dumps(keycloakData)
+
+    fileHandle = open(fileName, 'w')
+    fileHandle.write(jsonData)
+    fileHandle.close()    
+
 # writes the new client_secrets.json file 
 # for registration of ga4gh client with keycloak CanDIG realm
-def ga4ghKeycloakConfig(ga4ghSourceDirectory, keycloakIP, keycloakPort, ga4ghIP, ga4ghPort, ga4ghClientID, clientSecret, realmName):
-    fileName = ga4ghSourceDirectory + '/client_secrets.json'
+def ga4ghKeycloakConfig(ga4ghSourceDir, keycloakIP, keycloakPort, ga4ghIP, ga4ghPort, ga4ghClientID, clientSecret, realmName):
+
+    fileName = ga4ghSourceDir + '/client_secrets.json'
 
     keycloakRootUrl="http://" + keycloakIP + ":" + keycloakPort + "/auth"
     issuer = keycloakRootUrl + "/realms/" + realmName
@@ -134,22 +183,29 @@ def ga4ghKeycloakConfig(ga4ghSourceDirectory, keycloakIP, keycloakPort, ga4ghIP,
 # initializes the local ga4gh source code repository on the host machine
 # this function is used if there is no pre-existing ga4gh source to use
 # this code is later used to build the server on the docker container 
-def initSrc(ga4ghDirectory, ga4ghClientID, clientSecret, ga4ghIP, ga4ghPort, keycloakIP, keycloakPort, override, realmName):
-    ga4ghSourceDirectory = ga4ghDirectory + '/ga4gh-server'
-    duplicateDirectory = os.path.exists(ga4ghSourceDirectory)  
+def initSrc(ga4ghDir, ga4ghClientID, clientSecret, ga4ghIP, ga4ghPort, keycloakIP, keycloakPort, override, realmName):
+
+    ga4ghSourceDir = ga4ghDir + '/ga4gh-server'
+    duplicateDir = os.path.exists(ga4ghSourceDir)  
+
     # halt if a duplicate directory exists and no override command has been given
-    if (not duplicateDirectory) or override:
+    if (not duplicateDir) or override:
         # remove the existing source code if a duplicate directory exists
         # and the override command has been given
-        if override and duplicateDirectory:
-           shutil.rmtree(ga4ghSourceDirectory)
-        subprocess.call(['git', 'clone', '--branch', 'authentication', 'https://github.com/CanDIG/ga4gh-server.git', ga4ghSourceDirectory])
-        shutil.copyfile(ga4ghDirectory + '/frontend.py', ga4ghSourceDirectory + '/ga4gh/server/frontend.py')
-        shutil.copyfile(ga4ghDirectory + '/serverconfig.py', ga4ghSourceDirectory + '/ga4gh/server/serverconfig.py')
-        shutil.copyfile(ga4ghDirectory + '/dataPrep.py', ga4ghSourceDirectory + '/dataPrep.py')
-        ga4ghKeycloakConfig(ga4ghSourceDirectory, keycloakIP, keycloakPort, ga4ghIP, ga4ghPort, ga4ghClientID, clientSecret, realmName)
-    elif duplicateDirectory and (not override):
-        print('Using existing source directory and configuration ' + ga4ghSourceDirectory)
+        if override and duplicateDir:
+           shutil.rmtree(ga4ghSourceDir)
+
+        subprocess.call(['git', 'clone', '--branch', 'authentication', 'https://github.com/CanDIG/ga4gh-server.git', ga4ghSourceDir])
+
+        shutil.copyfile(ga4ghDir + '/requirements.txt', ga4ghSourceDir + '/requirements.txt')
+        shutil.copyfile(ga4ghDir + '/frontend.py', ga4ghSourceDir + '/ga4gh/server/frontend.py')
+        shutil.copyfile(ga4ghDir + '/serverconfig.py', ga4ghSourceDir + '/ga4gh/server/serverconfig.py')
+        shutil.copyfile(ga4ghDir + '/dataPrep.py', ga4ghSourceDir + '/dataPrep.py')
+
+        ga4ghKeycloakConfig(ga4ghSourceDir, keycloakIP, keycloakPort, ga4ghIP, ga4ghPort, ga4ghClientID, clientSecret, realmName)
+
+    elif duplicateDir and (not override):
+        print('Using existing source directory and configuration ' + ga4ghSourceDir)
         print('Command line configuration options for GA4GH will not be used')
 
 # initialize the command line arguments
@@ -159,9 +215,9 @@ parser = argparse.ArgumentParser(description='Deployment script for CanDIG which
 # defaults
 clientSecret          = '250e42b8-3f41-4d0f-9b6b-e32e09fccaf7'
 
-parser.add_argument(        '--ip',                                                                            help='Set the ip address of both servers')
-parser.add_argument('-kip', '--keycloak-ip',             default="192.168.99.100",         dest="keycloakIP",                   help='Set the ip address of the keycloak server')
-parser.add_argument('-gip', '--ga4gh-ip',                default="192.168.99.100",         dest="ga4ghIP",               help='Set the ip address of the ga4gh server')
+parser.add_argument('-i',   '--ip',                                                                            help='Set the ip address of both servers')
+parser.add_argument('-kip', '--keycloak-ip',             default="127.0.0.1",         dest="keycloakIP",                   help='Set the ip address of the keycloak server')
+parser.add_argument('-gip', '--ga4gh-ip',                default="127.0.0.1",         dest="ga4ghIP",               help='Set the ip address of the ga4gh server')
 parser.add_argument('-kp',  '--keycloak-port',           default="8080",                   dest="keycloakPort",                    help='Set the port number of the keycloak server')
 parser.add_argument('-gp',  '--ga4gh-port',              default="8000",                   dest="ga4ghPort",                       help='Set the port number of the ga4gh server')
 parser.add_argument('-r',   '--realm-name',              default="CanDIG",                 dest="realmName",                      help='Set the keycloak realm name')
@@ -181,6 +237,8 @@ parser.add_argument('-f',   '--funnel',                  default=False,         
 parser.add_argument(        'deploy',                                                                          help='Deploy the Keycloak and GA4GH server')
 parser.add_argument('-s',   '--singularity',             default=False,                     action='store_true', help='Deploy using singularity containers')
 parser.add_argument('-cs',  '--client-secret',           default=clientSecret, dest='clientSecret',              help="Client secret for the ga4gh server")
+#parser.add_argument('-nk',  '--no-keycloak', default=False, dest=noKeycloak, action='store_true', help="Do not deploy Keycloak")
+#parser.add_argument('-ck', '--config-keycloak', default=False, dest=configKeycloak, action='store_true', help='Reconfigure keycloak only - do not reinstall')
 #parser.add_argument('-oc',  '--config-override', default=False, dest='configOverride', action='store_true', help="Overwrite the client secrets file for an existing repository")
 #parser.add_argument('--adminPassword', help='Set the administrator account password')
 #parser.add_argument('--userPassword', help='Set the user account password')
@@ -193,8 +251,9 @@ initRepo              = True                     # flag as to whether to clone i
 #boot = False
 #configOnly = False 
 dataArg = 'default'
-keycloakDirectory = "./keycloakDocker"
-ga4ghDirectory = "./ga4ghDocker"
+keycloakDir = "./keycloak"
+ga4ghDir = "./ga4ghSrc"
+vagrantDir = './vagrant'
 
 # parse for command line arguments
 args = parser.parse_args()
@@ -204,14 +263,19 @@ if args.ip:
     args.keycloakIP = args.ip
     args.ga4ghIP = args.ip
 
+if args.singularity:
+    args.keycloakIP = "192.168.12.123"
+    args.ga4ghIP = "192.168.12.123"
+
 # initiate the deployment procedure if deploy has been specified
 if args.deploy:
-    containerTeardown(args.keycloakContainerName, args.ga4ghContainerName)
-
+    containerTeardown(args.keycloakContainerName, args.ga4ghContainerName, vagrantDir)
+ 
     keycloakConfigWrite(args.realmName, args.ga4ghClientID, args.clientSecret, args.ga4ghIP,\
-                        args.ga4ghPort, args.adminUsername, args.userUsername)
+                        args.ga4ghPort, args.adminUsername, args.userUsername, keycloakDir)
 
-    keycloakDeploy(args.keycloakImageName, args.keycloakContainerName, keycloakDirectory, args.keycloakPort)
+    if (not args.singularity):
+        keycloakDeploy(args.keycloakImageName, args.keycloakContainerName, keycloakDir, args.keycloakPort)
 
     # clone the tokenTracer into the keycloak container if enabled
     if args.tokenTracer:
@@ -219,11 +283,14 @@ if args.deploy:
 
     # initialize the repository containing the ga4gh source code locally if unspecified
     if args.ga4ghSrc == 'ga4gh-server':   
-        initSrc(ga4ghDirectory, args.ga4ghClientID, args.clientSecret, args.ga4ghIP,\
+        initSrc(ga4ghDir, args.ga4ghClientID, args.clientSecret, args.ga4ghIP,\
                 args.ga4ghPort, args.keycloakIP, args.keycloakPort, args.override, args.realmName) 
 
-    ga4ghDeploy(args.ga4ghImageName, args.ga4ghContainerName, ga4ghDirectory, args.ga4ghPort,\
-                args.ga4ghSrc)
+    if args.singularity:        
+        singularityDeploy(vagrantDir)
+    else:
+        ga4ghDeploy(args.ga4ghImageName, args.ga4ghContainerName, ga4ghDir, args.ga4ghPort,\
+                    args.ga4ghSrc)
 
     printDeploy(args.keycloakImageName, args.keycloakContainerName, args.keycloakIP, args.keycloakPort,\
                 args.ga4ghImageName, args.ga4ghContainerName, args.ga4ghIP, args.ga4ghPort,\

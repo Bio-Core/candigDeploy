@@ -17,4 +17,4 @@ CONFIG_FILE="${BASE_DIR}/${CONFIG_FILENAME}"
 
 #echo ${IP_ADDR}
 
-/home/keycloak-3.3.0.CR2/bin/standalone.sh -b ${IP_ADDR} -Dkeycloak.migration.action=import -Dkeycloak.migration.provider=singleFile -Dkeycloak.migration.file="${CONFIG_FILE}" -Dkeycloak.migration.strategy=OVERWRITE_EXISTING 
+/srv/keycloak-3.3.0.CR2/bin/standalone.sh -b ${IP_ADDR} -Dkeycloak.migration.action=import -Dkeycloak.migration.provider=singleFile -Dkeycloak.migration.file="${CONFIG_FILE}" -Dkeycloak.migration.strategy=OVERWRITE_EXISTING 
