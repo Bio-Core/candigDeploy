@@ -28,7 +28,7 @@ The source code can be found at:
 
 ## Requirements:
 
-* Docker OR (Vagrant AND Singularity)
+* Docker OR Vagrant
 * git
 * Python 2.7+
 

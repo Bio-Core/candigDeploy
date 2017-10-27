@@ -16,14 +16,12 @@ def containerTeardown(keycloakContainerName, ga4ghContainerName, vagrantDir, fun
     subprocess.call(['docker', 'container', 'kill', keycloakContainerName, ga4ghContainerName, funnelContainerName])
     subprocess.call(['docker', 'container', 'rm', keycloakContainerName, ga4ghContainerName, funnelContainerName])
     subprocess.call(['vagrant', 'destroy', '-f', 'default'], cwd=vagrantDir)
-    #subprocess.call(['vagrant', 'destroy', '-f', '$(vagrant global-status | grep ga4ghVagrantSingularity | awk \'{print $1;}\')'], cwd=ga4ghSingularityDir)
+
 
 # deploys the keycloak server
 # builds the keyserver docker image and runs it
 def keycloakDeploy(keycloakImageName, keycloakContainerName, keycloakDir, keycloakPort, tokenTracer):
     tokenArg = "tokenTracer=" + str(tokenTracer)
-    print('deployer.py: tokenTracer:')
-    print(tokenTracer)
     buildKeycloakCode = subprocess.call(['docker', 'build', '-t', keycloakImageName, '--build-arg', tokenArg, keycloakDir])
     # check if docker is working
     # abort if docker fails or is inaccessible
@@ -37,25 +35,13 @@ def keycloakDeploy(keycloakImageName, keycloakContainerName, keycloakDir, keyclo
         subprocess.Popen(['docker', 'run', '--cap-add', 'net_raw', '--cap-add', 'net_admin', '-p', keycloakPort + ':8080', '--name', keycloakContainerName, keycloakImageName])
     else:
         subprocess.Popen(['docker', 'run', '-p', keycloakPort + ':8080', '--name', keycloakContainerName, keycloakImageName])
+
     
 # deploys the ga4gh server
 # builds the ga4gh server docker image and runs it
 def ga4ghDeploy(ga4ghImageName, ga4ghContainerName, ga4ghDir, ga4ghPort, ga4ghSrc):
     # build the ga4gh server
     srcArg = 'sourceDir=' + ga4ghSrc
-    # copy in the files
-    #shutil.copyfile(ga4ghDir + '/frontend.py', ga4ghDockerDir + '/ga4gh/server/frontend.py')
-    #shutil.copyfile(ga4ghDir + '/serverconfig.py', ga4ghDockerDir + '/ga4gh/server/serverconfig.py')
-    #shutil.copyfile(ga4ghDir + '/dataPrep.py', ga4ghDockerDir + '/dataPrep.py')
-    #shutil.copyfile(ga4ghDir + '/requirements.txt', ga4ghDockerDir + '/requirements.txt')
-
-    # check for a duplicate source code directory for Docker to copy
-    # overwrite it if it exists
-    #duplicateDir = os.path.exists(ga4ghDockerDir + '/' + ga4ghSrc)
-    #if duplicateDir:
-    #    shutil.rmtree(ga4ghDockerDir + '/' + ga4ghSrc) 
-    #shutil.copytree(ga4ghDir + '/' + ga4ghSrc, ga4ghDockerDir + '/' + ga4ghSrc)
-  
     subprocess.call(['docker',  'build', '-t', ga4ghImageName, '--build-arg', srcArg, ga4ghDir])
     # run the ga4gh server
     subprocess.Popen(['docker', 'run', '-p', ga4ghPort + ':80', '--name', ga4ghContainerName, ga4ghImageName])
@@ -65,26 +51,13 @@ def ga4ghDeploy(ga4ghImageName, ga4ghContainerName, ga4ghDir, ga4ghPort, ga4ghSr
 # we should also have an option that deploys them directly via singularity
 # this would require us to test it in a linux environment
 def singularityDeploy(vagrantDir):
-    # os.environ["SECRET"] = ga4ghSecret
-    # os.environ["KEYCLOAK_IP"] = keycloakIP 
-    # os.environ["GA4GH_IP"] = ga4ghIP 
-    # os.environ["GA4GH_CLIENT_ID"] = ga4ghClientID 
-    # os.environ["GA4GH_REALM_NAME"] = realmName 
     subprocess.call(['vagrant', 'up'], cwd=vagrantDir)
-    #subprocess.call(['vagrant', 'ssh', '--command', 'sudo singularity run keycloak.img'], cwd=vagrantDir)
-    #subprocess.call(['vagrant', 'ssh', '--command', 'sudo singularity run ga4gh-server.img'], cwd=vagrantDir)
-
     
 # deploy the funnel server
 def funnelDeploy(funnelImageName, funnelContainerName, funnelPort, funnelDir):
-    print('funnelDeploy')
     subprocess.call(['docker', 'build', '-t', funnelImageName, funnelDir])
-
-
     subprocess.Popen(['docker', 'run', "-v", "/var/run/docker.sock:/var/run/docker.sock", '-p', funnelPort + ':3002', '--name', funnelContainerName, funnelImageName])
 
-    #subprocess.Popen(['docker', 'run', "--privileged", "-d", "docker:dind", '-p', funnelPort + ':3002', '--name', funnelContainerName, funnelImageName])
-    #subprocess.Popen(['docker', 'run', "--privileged", '-p', funnelPort + ':3002', '--name', funnelContainerName, funnelImageName])                                                            
 
 # prints the login information post-deployment
 def printDeploy(keycloakImageName, keycloakContainerName, keycloakIP, keycloakPort, \
@@ -119,8 +92,6 @@ def keycloakConfigWrite(realmName, ga4ghID, ga4ghSecret, ga4ghIP, ga4ghPort, adm
 
         configData[0]['realm'] = realmName
 
-        #print(configData[0]['clients'][3])
-        #print(configData[0]['clients'][3]['secret'])
         configData[0]['clients'][3]['clientId'] = funnelID
         configData[0]['clients'][3]['secret'] = funnelSecret
         configData[0]['clients'][3]['baseUrl'] = funnelUrl
@@ -153,8 +124,6 @@ def keycloakConfigWrite(realmName, ga4ghID, ga4ghSecret, ga4ghIP, ga4ghPort, adm
 
 # writes the keycloak.json file for the funnel client
 def funnelKeycloakConfig(realmName, keycloakIP, keycloakPort, funnelPort, funnelIP, funnelSecret, funnelID, funnelDir):
-    print('funnelConfig')
-
     fileName = funnelDir + '/funnel-node/node-client/keycloak.json'
 
     authUrl = "http://" + keycloakIP + ":" + keycloakPort + "/auth"
@@ -327,13 +296,5 @@ if args.deploy:
     printDeploy(args.keycloakImageName, args.keycloakContainerName, args.keycloakIP, args.keycloakPort,\
                 args.ga4ghImageName, args.ga4ghContainerName, args.ga4ghIP, args.ga4ghPort,\
                 args.userUsername, userPassword, args.adminUsername, adminPassword)
-
-
-
-    # execute the tokenTracer if enabled
-    #if args.tokenTracer: 
-    #    time.sleep(5)
-    #    print('tokenTracer')
-    #    subprocess.call(["docker", "exec", args.keycloakContainerName, "/usr/bin/python", "/home/tokenTracer/pyparseLive.py"])
  
 exit()
