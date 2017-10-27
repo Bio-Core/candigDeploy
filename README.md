@@ -141,3 +141,103 @@ python deployer.py -o deploy
 The override option will replace the existing source code directory with a new one pulled from git. It is recommended that you use a copy of the source code that you are modifying for development purposes, as this will destroy all of your work. 
 
 Note that for Singularity deployment, the servers are configured to listen to automatically on the private IP address 192.168.12.123 with Vagrant.
+
+---
+
+## Examples
+
+### Example 1: Keycloak and GA4GH Server Docker Deployment
+
+To deploy Keycloak and GA4GH on separate Docker containers on localhost, invoke the script with no arguments:
+
+```
+python deployer.py deploy
+```
+
+
+### Example 2: Overriding the source configuration
+
+To update the GA4GH source files (found in /ga4gh/ga4gh-server by default), use the --override option in the deployment. You cannot set options that configure GA4GH when an existing source code directory is being use unless you have this option. 
+
+```
+python deployer.py -o deploy
+```
+
+
+### Example 3: Keycloak and GA4GH Server Singularity/Vagrant Deployment
+
+To deploy Keycloak and GA4GH on separate Singularity containers hosted on a single Vagrant container, use the --singularity option:
+
+```
+python deployer.py -s -o deploy
+```
+
+Both servers will automatically be set to have the IP address 192.168.12.123. The override is necessary to configure GA4GH with this setting.
+
+### Example 4: Deployment on a different IP address
+
+To deploy Keycloak and GA4GH server with different IP addresses use the --ip option. This will change both the Keycloak and GA4GH server IPs. The override option is needed to overwrite any existing configuration files set to a different IP for GA4GH.
+
+```
+python deployer.py -o -i 192.168.12.123 deploy
+```
+
+This will cause both servers to be configured on the IP address 192.168.12.123. GA4GH and Keycloak need to know each other's IP addresses in order for the authentication protocols to work. 
+
+You can also change the ip ports that the Keycloak and GA4GH servers listen on individually through the keycloak-ip and ga4gh-ip options. These will be overrided by the --ip option if it is used.
+
+```
+python deployer.py -kip 127.123.45.678 deploy
+```
+
+This causes Keycloak to be assigned the IP address 127.123.45.678. For GA4GH, we can assign an IP 192.168.00.100:
+
+```
+python deployer.py -gip 192.168.00.100 deploy
+```
+
+### Example 5: Deploy on different ports:
+
+To set keycloak to listen to a different port, use the --keycloak-port option. GA4GH will be automatically configured to communicate with Keycloak using the new port number:
+
+```
+python deployer.py -kp 1234 deploy
+```
+
+This will cause Keycloak to listen on port 1234 of its IP address.
+
+Similarly, use the --ga4gh-port option to set GA4GH's port number. Keycloak will be configured accordingly:
+
+```
+python deployer.py -gp 5678 deploy
+```
+
+GA4GH will then listen on port number 5678.
+
+### Example 6: Test Data Deployment
+
+You can control how much data is preloaded onto the GA4GH server with the --no-data and --extra-data options. By default, a small minimal test data set is loaded onto the server. 
+
+To deploy the GA4GH server with no data:
+
+```
+python deployer.py -nd deploy
+```
+
+To deploy the GA4GH server with additional data from the 1000 genomes data set:
+
+```
+python deployer.py -ed deploy
+```
+
+### Example 7: Funnel Deployment
+
+```
+python deployer.py -f deploy
+```
+
+### Example 8: Token Tracer Deployment
+
+```
+python deployer.py -t deploy
+```

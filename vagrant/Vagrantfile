@@ -44,29 +44,8 @@ Vagrant.configure("2") do |config|
 
     sudo singularity build --writable keycloak.img keycloakSingularity
     sudo singularity build --writable ga4gh-server.img Singularity
-
-    #sudo singularity run keycloak.img 
-
-    #sudo singularity run ga4gh-server.img 
-
-    # start apache server inside
-    #sudo singularity exec ga4gh-server.img /usr/sbin/apache2ctl start &
-
-    echo "Vagrant-End"
-
     )
   end
-
-  config.vm.provision "shell", inline: "ls"
-
-  config.vm.provision "shell", inline: "echo TEST"
-
-  config.vm.provision "shell", inline: "sudo echo TESTSUDO"
-  config.vm.provision "shell", inline: "sudo singularity"
-
-  config.vm.provision "shell", inline: "echo $(sudo singularity)"
-
-  config.vm.provision "shell", inline: "echo $(sudo singularity run)"
 
   config.vm.provision "shell", inline: "sudo singularity run ga4gh-server.img"
 

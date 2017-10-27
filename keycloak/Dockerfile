@@ -5,7 +5,11 @@
 # Deploys the keycloak server
 FROM debian
 
-ENV DEBIAN_FRONTEND noninteractive
+ARG tokenTracer=False
+
+ENV tokenTracer=$tokenTracer
+
+ENV DEBIAN_FRONTEND="noninteractive"
 
 # Download and install wget, unzip, and java
 RUN apt-get update -y
@@ -22,13 +26,18 @@ RUN unzip keycloak-3.3.0.CR2.zip
 # copy over the configuration files for keycloak into the container
 COPY ./keycloakStart.sh /srv/keycloakStart.sh
 COPY ./keycloakConfig.json /srv/keycloakConfig.json
+COPY ./tokenTracerDeploy.sh /srv/tokenTracerDeploy.sh
 
 RUN chmod +x /srv/keycloakStart.sh
+RUN chmod +x /srv/tokenTracerDeploy.sh
+RUN /srv/tokenTracerDeploy.sh $tokenTracer
+
+RUN echo $tokenTracer
 
 # Start keycloak when the container is run
 # the keycloakStart.sh script determines the local IP on which
 # the keycloak server should listen
-CMD ["/srv/keycloakStart.sh"]
+CMD /srv/keycloakStart.sh $tokenTracer
 
 
 

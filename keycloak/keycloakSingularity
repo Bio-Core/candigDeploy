@@ -35,5 +35,4 @@ From: ubuntu:latest
     # Start keycloak when the container is run
     # the keycloakStart.sh script determines the local IP on which
     # the keycloak server should listen
-    # exec /srv/keycloakStart.sh 
     exec /srv/keycloak-3.3.0.CR2/bin/standalone.sh -b 192.168.12.123 -Dkeycloak.migration.action=import -Dkeycloak.migration.provider=singleFile -Dkeycloak.migration.file=/srv/keycloakConfig.json -Dkeycloak.migration.strategy=OVERWRITE_EXISTING 
