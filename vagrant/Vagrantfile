@@ -1,3 +1,30 @@
+
+#require 'getoptlong'
+
+#opts = GetoptLong.new(
+#  [ '--vagrant-ip', GetoptLong::OPTIONAL_ARGUMENT ]
+#)
+
+#vagrantIP=''
+
+#opts.each do |opt, arg|
+#  case opt
+#    when '--vagrant-ip'
+#      vagrantIP=arg
+#  end
+#end
+
+vagrantIP='127.0.0.1'
+
+# add to user shell
+# env_var_cmd = ""
+if ENV['VAGRANT_IP']
+   vagrantIP = ENV['VAGRANT_IP']
+end
+
+puts "vagrant IP"
+puts vagrantIP
+
 Vagrant.configure("2") do |config|
 
   config.vm.box = "bento/ubuntu-16.04"
@@ -5,21 +32,16 @@ Vagrant.configure("2") do |config|
   config.vm.network "forwarded_port", guest: 8000, host: 8000
   config.vm.network "forwarded_port", guest: 8080, host: 8080
 
-  config.vm.network "private_network", ip: "192.168.12.123"
+  config.vm.network "private_network", ip: vagrantIP
 
   config.vm.provider "virtualbox" do |vb|
     vb.customize ["modifyvm", :id, "--cableconnected1", "on"]
   end
 
-  # copy files into vagrant container
-  config.vm.synced_folder "../ga4gh/ga4gh-server", "/home/vagrant/ga4gh-server"
-  config.vm.provision "file", source: "../ga4gh/Singularity", destination: "Singularity"
-  config.vm.provision "file", source: "../ga4gh/ports.conf", destination: "ports.conf"
-  config.vm.provision "file", source: "../ga4gh/001-ga4gh.conf", destination: "001-ga4gh.conf"
-  config.vm.provision "file", source: "../keycloak/keycloakSingularity", destination: "keycloakSingularity"
-  config.vm.provision "file", source: "../keycloak/keycloakConfig.json", destination: "keycloakConfig.json"
-  config.vm.provision "file", source: "../keycloak/keycloakStart.sh", destination: "keycloakStart.sh"
+  # sync the deployer with the vagrant container
+  config.vm.synced_folder "..", "/home/vagrant/candig-deploy"
 
+  # install singularity
   config.vm.provision "shell" do |s|
     s.inline = %Q(
 
@@ -40,15 +62,19 @@ Vagrant.configure("2") do |config|
 
     # create, bootstrap/build singularity ga4gh image and then run container
 
-    cd /home/vagrant/
+    cd /home/vagrant/candig-deploy
 
-    sudo singularity build --writable keycloak.img keycloakSingularity
-    sudo singularity build --writable ga4gh-server.img Singularity
+    # run the deployer script to deploy singularity containers
+    python /home/vagrant/candig-deploy/deployer.py -s -rc -i ${1} deploy
+
+    # sudo singularity build --writable keycloak.img keycloakSingularity
+    # sudo singularity build --writable ga4gh-server.img Singularity
     )
+    s.args = [vagrantIP]
   end
 
-  config.vm.provision "shell", inline: "sudo singularity run ga4gh-server.img"
+  # config.vm.provision "shell", inline: "sudo singularity run ga4gh-server.img"
 
-  config.vm.provision "shell", inline: "sudo singularity run keycloak.img"    
+  # config.vm.provision "shell", inline: "sudo singularity run keycloak.img"    
 
 end

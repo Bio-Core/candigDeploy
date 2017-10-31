@@ -15,8 +15,8 @@ MAINTAINER David Steinberg <david@resium.com>
 # the source directory on which the ga4gh code resides
 ARG sourceDir="ga4gh-server"
 ARG dataArg="default"
-ENV sourceDir=${sourceDir}
-ENV dataArg=${dataArg}
+ENV sourceDir=$sourceDir
+ENV dataArg=$dataArg
 
 # Update the sources list
 
@@ -77,14 +77,14 @@ EXPOSE 80
 WORKDIR /srv/ga4gh/server
 
 # download and load the compliance data onto the ga4gh server
-RUN python dataPrep.py ${dataArg}
+RUN python dataPrep.py $dataArg
 # RUN python scripts/prepare_compliance_data.py -o ../ga4gh-compliance-data
 
 # eliminate the deployment files that are unnecessary for server operations
-RUN rm -r /srv/ga4gh/server/docs
-RUN rm -r /srv/ga4gh/server/deploy
-RUN rm -r /srv/ga4gh/server/tests
-RUN rm -r /srv/ga4gh/server/tools
+# RUN rm -r /srv/ga4gh/server/docs
+# RUN rm -r /srv/ga4gh/server/deploy
+# RUN rm -r /srv/ga4gh/server/tests
+# RUN rm -r /srv/ga4gh/server/tools
 
 # there are more still to remove
 

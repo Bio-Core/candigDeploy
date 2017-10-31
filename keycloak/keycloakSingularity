@@ -8,8 +8,8 @@ From: ubuntu:latest
 
 %setup
 
-    cp keycloakStart.sh ${SINGULARITY_ROOTFS}
-    cp keycloakConfig.json ${SINGULARITY_ROOTFS}
+    cp /home/vagrant/candig-deploy/keycloak/keycloakStart.sh ${SINGULARITY_ROOTFS}
+    cp /home/vagrant/candig-deploy/keycloak/keycloakConfig.json ${SINGULARITY_ROOTFS}
 
 %post
 
@@ -35,4 +35,5 @@ From: ubuntu:latest
     # Start keycloak when the container is run
     # the keycloakStart.sh script determines the local IP on which
     # the keycloak server should listen
-    exec /srv/keycloak-3.3.0.CR2/bin/standalone.sh -b 192.168.12.123 -Dkeycloak.migration.action=import -Dkeycloak.migration.provider=singleFile -Dkeycloak.migration.file=/srv/keycloakConfig.json -Dkeycloak.migration.strategy=OVERWRITE_EXISTING 
+    exec /srv/keycloakStart.sh False
+    #exec /srv/keycloak-3.3.0.CR2/bin/standalone.sh -b 192.168.12.123 -Dkeycloak.migration.action=import -Dkeycloak.migration.provider=singleFile -Dkeycloak.migration.file=/srv/keycloakConfig.json -Dkeycloak.migration.strategy=OVERWRITE_EXISTING 

@@ -66,11 +66,12 @@ The command line options can modify the following variables:
 
 | Variable                | Short Form | Default                     | Description                                                                                      | 
 |:----------------------- |:---------- |:--------------------------- |:------------------------------------------------------------------------------------------------ |
+| ip                      | i          | None                        | The IP to assign all servers to listen on. Overrides all other IP settings.                      |
 | keycloak-ip             | kip        | 127.0.0.1                   | The IP of the Keycloak server to listen on.                                                      | 
 | ga4gh-ip                | gip        | 127.0.0.1                   | The IP of the GA4GH server to listen on.                                                         | 
 | keycloak-port           | kp         | 8080                        | The port number the Keycloak server listens on.                                                  |
 | ga4gh-port              | gp         | 8000                        | The port number of the Ga4gh server listens on.                                                  |
-| ga4gh-client-id         | gid        | ga4ghServer                 | The Keycloak client id of the GA4GH server with which it will register with Keycloak as a client | 
+| ga4gh-id                | gid        | ga4gh                       | The Keycloak client id of the GA4GH server with which it will register with Keycloak as a client | 
 | realm-name              | r          | CanDIG                      | The name of the Keycloak realm on which the GA4GH server registers as a client                   | 
 | keycloak-image-name     | kin        | keycloak_candig_server      | The name to assign the resulting Docker image of the Keycloak server                             |
 | keycloak-container-name | kcn        | keycloak_candig_server      | The name to assign the container running the Keycloak server image                               |
@@ -80,12 +81,19 @@ The command line options can modify the following variables:
 | user-username           | uu         | user                        | The username of the user to login to the GA4GH server at the login page                          |  
 | override                | o          | False                       | Overrides the target source directory for ga4gh  with a clean repository pulled from github      |
 | ga4ghSrc                | gs         |  ./ga4ghDocker/ga4gh-server | The location of the source directory to use for ga4gh                                            |
-| singularity             | s          | False                       | Deploys GA4GH and Keycloak servers on Singuarity through Vagrant                                 |
+| singularity             | s          | False                       | Deploys GA4GH and Keycloak servers on Singularity                                                |
 | token-tracer            | t          | False                       | Deploys the token tracer on the Keycloak server container (Docker only)                          |
 | funnel                  | f          | False                       | Deploys the funnel server in addition to GA4GH and keycloak (Docker only)                        |
 | no-data                 | nd         | False                       | Deploys the GA4GH server with no data loaded (Docker only)                                       |
 | extra-data              | ed         | False                       | Deploys the GA4GH server with additional 1000g data (Docker only)                                |
-| client-secret           | cs         | SEE CONFIGURATION           | Sets the client secret for the GA4GH server                                                      |
+| ga4gh-secret            | cs         | SEE CONFIGURATION           | Sets the client secret for the GA4GH server                                                      |
+| funnel-ip               | fip        | 127.0.0.1                   | Sets the IP on which the funnel server is located                                                |
+| funnel-port             | fp         | 3002                        | Sets the port number on which funnel listens                                                     |
+| funnel-id               | fid        | funnel                      | Sets the funnel client id for registration with Keycloak                                         |
+| funnel-container-name   | fcn        | funnel_candig_server        | Sets the container name of the funnel Docker container                                           |
+| funnel-image-name       | fin        | funnel_candig_server        | Sets the tag of the funnel Docker image name                                                     |
+| funnel-secret           | fs         | SEE CONFIGURATION           | Sets the client secret for the funnel server                                                     |
+| vagrant                 | v          | False                       | Deploys a Vagrant container linked to the deployer on which Singularity containers may be deployed |
 
 ---
 
@@ -196,6 +204,14 @@ This causes Keycloak to be assigned the IP address 127.123.45.678. For GA4GH, we
 python deployer.py -gip 192.168.00.100 deploy
 ```
 
+We can also combine these arguments:
+
+```
+python deployer.py -kip 172.101.42.101 -gip 172.404.82.404 deploy
+```
+
+Which will set keycloak to listen on IP 172.101.42.101 and GA4GH to listen on IP 172.404.82.404.
+
 ### Example 5: Deploy on different ports:
 
 To set keycloak to listen to a different port, use the --keycloak-port option. GA4GH will be automatically configured to communicate with Keycloak using the new port number:
@@ -214,6 +230,14 @@ python deployer.py -gp 5678 deploy
 
 GA4GH will then listen on port number 5678.
 
+In analogy with setting separate IPs, we may combine these options to set different ports:
+
+```
+python deployer.py -kp 7345 -gp 1984 deploy
+```
+
+Which will set Keycloak to listen on port 7345 and GA4GH to listen on port 1984.
+
 ### Example 6: Test Data Deployment
 
 You can control how much data is preloaded onto the GA4GH server with the --no-data and --extra-data options. By default, a small minimal test data set is loaded onto the server. 
@@ -230,10 +254,24 @@ To deploy the GA4GH server with additional data from the 1000 genomes data set:
 python deployer.py -ed deploy
 ```
 
+Deploying the additional data will take significantly longer than otherwise.
+
+These options are mutually exclusive.
+
 ### Example 7: Funnel Deployment
+
+To deploy a Docker container that holds a Keycloak-authenticated funnel server:
 
 ```
 python deployer.py -f deploy
+```
+
+The funnel server is accessible at port 3002 on the IP 127.0.0.1.
+
+As with Keycloak and GA4GH server, the funnel server can be parameterized in terms of IP and port number:
+
+```
+python deployer.py -f -fip 192.168.00.100 -fp 9090 deploy
 ```
 
 ### Example 8: Token Tracer Deployment
@@ -241,3 +279,9 @@ python deployer.py -f deploy
 ```
 python deployer.py -t deploy
 ```
+
+This will deploy the token tracer program alongside the Keycloak server.
+
+The token tracer will print alongside the other server debugging statements to stdout as it recieves packets of interest. 
+
+ 

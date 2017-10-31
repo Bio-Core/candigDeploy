@@ -7,9 +7,9 @@ From: ubuntu:latest
     echo "%setup"
 
     # copy files into singularity container root
-    cp -r /home/vagrant/ga4gh-server $SINGULARITY_ROOTFS
-    cp /home/vagrant/001-ga4gh.conf $SINGULARITY_ROOTFS
-    cp /home/vagrant/ports.conf $SINGULARITY_ROOTFS
+    cp -r /home/vagrant/candig-deploy/ga4gh/ga4gh-server $SINGULARITY_ROOTFS
+    cp /home/vagrant/candig-deploy/ga4gh/001-ga4gh.conf $SINGULARITY_ROOTFS
+    cp /home/vagrant/candig-deploy/ga4gh/ports.conf $SINGULARITY_ROOTFS
  
 %post
 
