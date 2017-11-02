@@ -1,0 +1,44 @@
+BootStrap: docker
+From: ubuntu:latest
+
+%setup
+
+    cp funnel-node/node-resource/config.json /home/funnel-node/node-resource/config.json
+    cp funnel-node/node-resource/funnelAPI.js /home/funnel-node/node-resource/funnelAPI.js
+
+    cp funnel-node/node-client/keycloak.json /home/funnel-node/node-client/keycloak.json
+    cp funnel-node/node-client/public/app.js /home/funnel-node/node-client/public/app.js
+
+    # copy in the bootstrap script to start the servers
+    cp funnelChainStart.sh /home/funnelChainStart.sh
+
+%post
+
+    # install docker?
+
+    # update mirrors
+    apt-get -y update
+
+    # install packages
+    apt-get install -y wget git build-essential curl docker.io
+    curl -sL https://deb.nodesource.com/setup_4.x | bash
+    apt-get install -y nodejs
+
+    cd /home
+
+    # get the funnel executable
+    wget https://github.com/ohsu-comp-bio/funnel/releases/download/0.2.0/funnel-linux-amd64.tar.gz
+
+    # unzip the compressed file and clean up
+    tar -xvf funnel-linux-amd64.tar.gz
+    rm funnel-linux-amd64.tar.gz
+
+    git clone https://github.com/CanDIG/funnel-node.git 
+
+    # copy in the fixes to the source code and the modified configuration files
+    chmod +x /home/funnelChainStart.sh
+
+%runscript
+
+    exec /home/funnelChainStart.sh
+

@@ -4,16 +4,10 @@ From: ubuntu:latest
 
 %setup
 
-    echo "%setup"
-
     # copy files into singularity container root
     cp -r /home/vagrant/candig-deploy/ga4gh/ga4gh-server $SINGULARITY_ROOTFS
-    cp /home/vagrant/candig-deploy/ga4gh/001-ga4gh.conf $SINGULARITY_ROOTFS
-    cp /home/vagrant/candig-deploy/ga4gh/ports.conf $SINGULARITY_ROOTFS
  
 %post
-
-    echo "%post"
 
     # at this point we're at the root(/) of filesystem in the container
 
@@ -31,38 +25,33 @@ From: ubuntu:latest
     mkdir /var/cache/apache2/python-egg-cache && \
     chown www-data:www-data /var/cache/apache2/python-egg-cache/
 
-    mkdir -p /srv/ga4gh
-    # cd /srv/ga4gh
+    mkdir -p /srv/ga4gh-server
 
-    mv /ga4gh-server /srv/ga4gh/server
-
-    cd /srv/ga4gh/server
+    mv /ga4gh-server /srv
 
     # install python package requirements
-    pip install -r requirements.txt
+    pip install -r /srv/ga4gh-server/requirements.txt
 
-    pip install .
+    pip install /srv/ga4gh-server
 
     # ga4gh server setup
-    mv /ports.conf /etc/apache2/ports.conf
-    mv /001-ga4gh.conf /etc/apache2/sites-available/001-ga4gh.conf
-    cp /srv/ga4gh/server/deploy/application.wsgi /srv/ga4gh/application.wsgi
-    cp /srv/ga4gh/server/deploy/config.py /srv/ga4gh/config.py
+    cp /srv/ga4gh-server/deploy/ports.conf /etc/apache2/ports.conf
+    cp /srv/ga4gh-server/deploy/001-ga4gh.conf /etc/apache2/sites-available/001-ga4gh.conf
+    cp /srv/ga4gh-server/deploy/application.wsgi /srv/application.wsgi
+    cp /srv/ga4gh-server/deploy/config.py /srv/config.py
 
-    cd /etc/apache2/sites-enabled
+    ls /etc/apache2/sites-enabled
+
+    #cd /etc/apache2/sites-enabled
     a2dissite 000-default
     a2ensite 001-ga4gh
 
     # prepare sample/compliance data
-    cd /srv/ga4gh/server
-    python scripts/prepare_compliance_data.py -o ../ga4gh-compliance-data
+    cd /srv/ga4gh-server/scripts
 
-    # ga4gh server configuration
-
-    echo "Singularity-End"
+    python prepare_compliance_data.py -o ../../ga4gh-compliance-data
+    # python /srv/ga4gh-server/dataPrep.py default
 
 %runscript
 
-    echo '%runscript'
     exec /usr/sbin/apache2ctl start
-    echo '%runscript-END'

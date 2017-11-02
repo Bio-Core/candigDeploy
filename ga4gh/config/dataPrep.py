@@ -6,11 +6,11 @@ import subprocess
 dataArg = sys.argv[1]
 
 
-dataDir = "../ga4gh-compliance-data"
+dataDir = "/srv/ga4gh-compliance-data"
 dataReg = dataDir + "/registry.db"
 
 if dataArg == "default":
-    subprocess.call(["python", "./scripts/prepare_compliance_data.py", "-o", dataDir])
+    subprocess.call(["python", "/srv/ga4gh-server/scripts/prepare_compliance_data.py", "-o", dataDir])
 elif dataArg == "extra":
     subprocess.call(["mkdir", dataDir])
     subprocess.call(["ga4gh_repo", "init", dataReg])   

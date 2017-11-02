@@ -10,9 +10,11 @@ This script deploys application servers for the CanDIG project:
 1. Keycloak authentication server 
 2. Authorization branch CanDIG GA4GH application server
 
-The deployment can be faciliated either through Docker or Singularity (with Vagrant).
+The deployment can be faciliated either through Docker, Singularity, or Vagrant.
 
 The servers are configured to be registered with one another and communicate with such that a user must authenticate with the GA4GH server through a login page using the username and password specified prior to using its REST API.
+
+In each deployment, the Keycloak server is essential, as it provides login and authentication facilities for each application server that is available to the deployment program.
 
 The deployer also supports:
 
@@ -28,9 +30,12 @@ The source code can be found at:
 
 ## Requirements:
 
-* Docker OR Vagrant
+* Linux OR MacOS
+* Docker OR Vagrant OR Singularity
 * git
 * Python 2.7+
+
+Note that Singularity will NOT work on MacOS, and hence requires the Vagrant deployment to use Singularity. 
 
 Docker or Vagrant may need a hypervisor such as VirtualBox in order to work.
 
@@ -46,9 +51,19 @@ python deployer.py deploy
 
 The script will fail if the IPs of both GA4GH Server and Keycloak Server at not set to the IPs of the interfaces through which they may be accessed. 
 
-Ensure that the ports (which by default are 8000 and 8080) are free. 
+Ensure that the ports (which by default are 8000 and 8080) are free. The docker daemon must be running in order for Docker deployment to work.
 
-If the Vagrant containers fail to be removed, delete the vagrant and ruby processes associated with Vagrant using `ps -e` and `kill PID`. 
+
+### Vagrant Deployment Issues
+
+If the Vagrant containers fail to be removed, delete processes associated with Vagrant using `ps -e` and `kill PID`. 
+You should look for processes under VBox, such as VBoxHeadless and delete those:
+
+```ps -e | egrep VBox```
+
+These processes may also be running vagrant itself or ruby:
+
+```ps -e | egrep ruby|vagrant```
 
 ---
 
@@ -64,7 +79,7 @@ python deployer.py --help
 
 The command line options can modify the following variables:
 
-| Variable                | Short Form | Default                     | Description                                                                                      | 
+| Argument (Long Form)    | Short Form | Default                     | Description                                                                                      | 
 |:----------------------- |:---------- |:--------------------------- |:------------------------------------------------------------------------------------------------ |
 | ip                      | i          | None                        | The IP to assign all servers to listen on. Overrides all other IP settings.                      |
 | keycloak-ip             | kip        | 127.0.0.1                   | The IP of the Keycloak server to listen on.                                                      | 
@@ -86,16 +101,19 @@ The command line options can modify the following variables:
 | funnel                  | f          | False                       | Deploys the funnel server in addition to GA4GH and keycloak (Docker only)                        |
 | no-data                 | nd         | False                       | Deploys the GA4GH server with no data loaded (Docker only)                                       |
 | extra-data              | ed         | False                       | Deploys the GA4GH server with additional 1000g data (Docker only)                                |
-| ga4gh-secret            | cs         | SEE CONFIGURATION           | Sets the client secret for the GA4GH server                                                      |
-| funnel-ip               | fip        | 127.0.0.1                   | Sets the IP on which the funnel server is located                                                |
-| funnel-port             | fp         | 3002                        | Sets the port number on which funnel listens                                                     |
-| funnel-id               | fid        | funnel                      | Sets the funnel client id for registration with Keycloak                                         |
-| funnel-container-name   | fcn        | funnel_candig_server        | Sets the container name of the funnel Docker container                                           |
-| funnel-image-name       | fin        | funnel_candig_server        | Sets the tag of the funnel Docker image name                                                     |
-| funnel-secret           | fs         | SEE CONFIGURATION           | Sets the client secret for the funnel server                                                     |
+| ga4gh-secret            | cs         | SEE CONFIGURATION           | The client secret for the GA4GH server                                                           |
+| funnel-ip               | fip        | 127.0.0.1                   | The IP on which the funnel server is located                                                     |
+| funnel-port             | fp         | 3002                        | The port number on which funnel listens                                                          |
+| funnel-id               | fid        | funnel                      | The funnel client id for registration with Keycloak                                              |
+| funnel-container-name   | fcn        | funnel_candig_server        | The container name of the funnel Docker container                                                |
+| funnel-image-name       | fin        | funnel_candig_server        | The tag of the funnel Docker image name                                                          |
+| funnel-secret           | fs         | SEE CONFIGURATION           | The client secret for the funnel server                                                          |
 | vagrant                 | v          | False                       | Deploys a Vagrant container linked to the deployer on which Singularity containers may be deployed |
+| vagrant-ip              | vip        | 127.0.0.1                   | The IP address of the Vagrant container                                                          | 
 
 ---
+
+As by convention, long form arguments are given with the double hyphen prefix "--" and short form arguments are given a single hyphen "-", as seen in the examples. 
 
 ## Server Access and Login:
 
@@ -140,7 +158,9 @@ You would then set the deployer to configure GA4GH and Keycloak to listen on 192
 python deployer.py -i 192.168.12.1 deploy
 ```
 
-Each time you set the servers to listen on a new IP address, you should override the reference source code with the --override option:
+The deployer program will create a source code directory for GA4GH if one does not exist. It will reuse this source code in subsequent deployments, and reconfigure it based on the options provided. 
+
+The --override option can be used to wipe the current source code directory with a default build:
 
 ```
 python deployer.py -o deploy
@@ -148,7 +168,15 @@ python deployer.py -o deploy
 
 The override option will replace the existing source code directory with a new one pulled from git. It is recommended that you use a copy of the source code that you are modifying for development purposes, as this will destroy all of your work. 
 
-Note that for Singularity deployment, the servers are configured to listen to automatically on the private IP address 192.168.12.123 with Vagrant.
+### Private IP Addresses
+
+When deploying through VirtualBox or any software hypervisor, the ip addresses assigned as an interface must be within the private range of IP addresses. This is particularly relevant for Vagrant deployment if used with VirtualBox, where the vagrant IP address must be private. 
+
+The private IP address range is as follows:
+
+* 192.168.0.0 – 192.168.255.255
+* 172.16.0.0 – 172.31.255.255
+* 10.0.0.0 – 10.255.255.255
 
 ---
 
@@ -177,7 +205,7 @@ python deployer.py -o deploy
 To deploy Keycloak and GA4GH on separate Singularity containers hosted on a single Vagrant container, use the --singularity option:
 
 ```
-python deployer.py -s -o deploy
+python deployer.py -s deploy
 ```
 
 Both servers will automatically be set to have the IP address 192.168.12.123. The override is necessary to configure GA4GH with this setting.
@@ -187,7 +215,7 @@ Both servers will automatically be set to have the IP address 192.168.12.123. Th
 To deploy Keycloak and GA4GH server with different IP addresses use the --ip option. This will change both the Keycloak and GA4GH server IPs. The override option is needed to overwrite any existing configuration files set to a different IP for GA4GH.
 
 ```
-python deployer.py -o -i 192.168.12.123 deploy
+python deployer.py -i 192.168.12.123 deploy
 ```
 
 This will cause both servers to be configured on the IP address 192.168.12.123. GA4GH and Keycloak need to know each other's IP addresses in order for the authentication protocols to work. 
@@ -273,6 +301,8 @@ As with Keycloak and GA4GH server, the funnel server can be parameterized in ter
 ```
 python deployer.py -f -fip 192.168.00.100 -fp 9090 deploy
 ```
+
+The client application to funnel currently only supports a single test job that repeated prints the date.
 
 ### Example 8: Token Tracer Deployment
 

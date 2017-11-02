@@ -1,36 +1,27 @@
 
-#require 'getoptlong'
-
-#opts = GetoptLong.new(
-#  [ '--vagrant-ip', GetoptLong::OPTIONAL_ARGUMENT ]
-#)
-
-#vagrantIP=''
-
-#opts.each do |opt, arg|
-#  case opt
-#    when '--vagrant-ip'
-#      vagrantIP=arg
-#  end
-#end
-
 vagrantIP='127.0.0.1'
+ga4ghPort='8080'
+keycloakPort='8000'
 
-# add to user shell
-# env_var_cmd = ""
 if ENV['VAGRANT_IP']
    vagrantIP = ENV['VAGRANT_IP']
 end
+if ENV['KEYCLOAK_PORT']
+   keycloakPort = ENV['KEYCLOAK_PORT']
+end
+if ENV['GA4GH_PORT']
+   ga4ghPort = ENV['GA4GH_PORT']
+end
 
-puts "vagrant IP"
-puts vagrantIP
+#puts "vagrant IP"
+#puts vagrantIP
 
 Vagrant.configure("2") do |config|
 
   config.vm.box = "bento/ubuntu-16.04"
 
-  config.vm.network "forwarded_port", guest: 8000, host: 8000
-  config.vm.network "forwarded_port", guest: 8080, host: 8080
+  config.vm.network "forwarded_port", guest: keycloakPort, host: keycloakPort
+  config.vm.network "forwarded_port", guest: ga4ghPort, host: ga4ghPort
 
   config.vm.network "private_network", ip: vagrantIP
 
@@ -65,16 +56,10 @@ Vagrant.configure("2") do |config|
     cd /home/vagrant/candig-deploy
 
     # run the deployer script to deploy singularity containers
-    python /home/vagrant/candig-deploy/deployer.py -s -rc -i ${1} deploy
+    python /home/vagrant/candig-deploy/deployer.py -s -i ${1} -kp ${2} -gp ${3} deploy
 
-    # sudo singularity build --writable keycloak.img keycloakSingularity
-    # sudo singularity build --writable ga4gh-server.img Singularity
     )
-    s.args = [vagrantIP]
+    s.args = [vagrantIP, keycloakPort, ga4ghPort]
   end
-
-  # config.vm.provision "shell", inline: "sudo singularity run ga4gh-server.img"
-
-  # config.vm.provision "shell", inline: "sudo singularity run keycloak.img"    
 
 end
