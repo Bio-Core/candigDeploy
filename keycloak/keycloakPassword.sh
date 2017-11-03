@@ -1,7 +1,6 @@
 #!/bin/bash
 
 # resets the user and admin password to be the passwords specified by the deployer script
-
 IP_ADDRESS=${1}
 REALM_NAME=${2}
 ADMIN_USERNAME=${3}
@@ -9,9 +8,7 @@ ADMIN_PASSWORD=${4}
 USER_USERNAME=${5}
 USER_PASSWORD=${6}
 
-echo "preparing password"
-
-# reset the passwords if they are not the default                                                                                                                                                                                                                              
+# reset the passwords if they are not the default
 if [ \( "${USER_PASSWORD}" != "user" \) -o \( "${ADMIN_PASSWORD}" != "admin" \) ]
 then
     TIMEOUT=50
@@ -38,8 +35,7 @@ then
     fi
 fi
 
-echo "Passed password"
-
+exit 0
 
 
 

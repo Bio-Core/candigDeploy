@@ -7,13 +7,6 @@ ADMIN_PASSWORD=${4}
 USER_USERNAME=${5}
 USER_PASSWORD=${6}
 
-echo "EXECUTING"
-
-echo ${REALM_NAME}
-echo ${ADMIN_USERNAME}
-echo ${ADMIN_PASSWORD}
-echo ${USER_USERNAME}
-echo ${USER_PASSWORD}
 # sets up keycloak to listen on the external eth0 IP
 
 # find the external inet IP address for the eth0 interface
@@ -29,12 +22,7 @@ CONFIG_FILE="${BASE_DIR}/${CONFIG_FILENAME}"
 
 # start the keycloak server to listen on the external IP address
 
-echo ${IP_ADDR}
-echo ${CONFIG_FILE}
-
 /srv/keycloakPassword.sh ${IP_ADDR} ${REALM_NAME} ${ADMIN_USERNAME} ${ADMIN_PASSWORD} ${USER_USERNAME} ${USER_PASSWORD} &
-
-echo "proceeding with token tracer"
 
 # run the token tracer if specified
 if [ "${tokenTracer}" == "True" ]
@@ -42,13 +30,9 @@ then
     /usr/bin/python /srv/tokenTracer/tokenTracer.py
 fi
 
-echo "proceeding to server"
-
 /srv/keycloak-3.3.0.CR2/bin/standalone.sh -b ${IP_ADDR} -Dkeycloak.migration.action=import -Dkeycloak.migration.provider=singleFile -Dkeycloak.migration.file="${CONFIG_FILE}" -Dkeycloak.migration.strategy=OVERWRITE_EXISTING 
 
-echo "Complete"
-
-#exit 0
+exit 0
 
 
 
