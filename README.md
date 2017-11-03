@@ -49,6 +49,12 @@ To execute this script, run the deployer script in the root directory:
 python deployer.py deploy
 ```
 
+Alternatively, you may call the script directly:
+
+```
+./deployer.py deploy
+```
+
 The script will fail if the IPs of both GA4GH Server and Keycloak Server at not set to the IPs of the interfaces through which they may be accessed. 
 
 Ensure that the ports (which by default are 8000 and 8080) are free. The docker daemon must be running in order for Docker deployment to work.

@@ -10,6 +10,7 @@ From: ubuntu:latest
 
     cp /home/vagrant/candig-deploy/keycloak/keycloakStart.sh ${SINGULARITY_ROOTFS}
     cp /home/vagrant/candig-deploy/keycloak/keycloakConfig.json ${SINGULARITY_ROOTFS}
+    cp /home/vagrant/candig-deploy/keycloak/keycloakPassword.sh ${SINGULARITY_ROOTFS}
 
 %post
 
@@ -27,13 +28,15 @@ From: ubuntu:latest
 
     mv /keycloakStart.sh /srv/keycloakStart.sh
     mv /keycloakConfig.json /srv/keycloakConfig.json
+    mv /keycloakPassword.sh /srv/keycloakPassword.sh
 
     chmod +x /srv/keycloakStart.sh
+    chmod +x /srv/keycloakPassword.sh
 
 %runscript
 
     # Start keycloak when the container is run
     # the keycloakStart.sh script determines the local IP on which
     # the keycloak server should listen
-    exec /srv/keycloakStart.sh False
+    exec /srv/keycloakStart.sh False CanDIG admin admin user user
     

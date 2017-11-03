@@ -1,17 +1,15 @@
 #!/usr/bin/python
+"""
+Loads test datasets for the GA4GH server
+
+Based on the arguments provided from the deployer, one of the datsets is loaded
+"""
 
 import sys
 import subprocess
 
-dataArg = sys.argv[1]
-
-
-dataDir = "/srv/ga4gh-compliance-data"
-dataReg = dataDir + "/registry.db"
-
-if dataArg == "default":
-    subprocess.call(["python", "/srv/ga4gh-server/scripts/prepare_compliance_data.py", "-o", dataDir])
-elif dataArg == "extra":
+def loadExtra(dataReg):
+    """Loads a subset of the 1000g data based on the GA4GH documentation"""
     subprocess.call(["mkdir", dataDir])
     subprocess.call(["ga4gh_repo", "init", dataReg])   
     subprocess.call(["ga4gh_repo", "add-dataset", dataReg, "1kgenomes", "--description", "Variants  from the 1000 Genomes project and GENCODE genes annotations"])
@@ -32,7 +30,22 @@ elif dataArg == "extra":
     subprocess.call(["ga4gh_repo", "add-variantset", dataReg, "1kgenomes", "release/", "--name", "phase3-release", "--referenceSetName", "NCBI37"])
     subprocess.call(["wget", "http://s3.amazonaws.com/1000genomes/phase3/data/HG00096/alignment/HG00096.mapped.ILLUMINA.bwa.GBR.low_coverage.20120522.bam.bai"])
     subprocess.call(["ga4gh_repo", "add-readgroupset", dataReg, "1kgenomes", "-I", "HG00096.mapped.ILLUMINA.bwa.GBR.low_coverage.20120522.bam.bai", "--referenceSetName", "NCBI37", "http://s3.amazonaws.com/1000genomes/phase3/data/HG00096/alignment/HG00096.mapped.ILLUMINA.bwa.GBR.low_coverage.20120522.bam"])
+
+
+dataArg = sys.argv[1]
+
+dataDir = "/srv/ga4gh-compliance-data"
+dataReg = dataDir + "/registry.db"
+
+if dataArg == "default":
+    # load a minimal test set
+    subprocess.call(["python", "/srv/ga4gh-server/scripts/prepare_compliance_data.py", "-o", dataDir])
+elif dataArg == "extra":
+    # load many gigabytes of data from the 1000g dataset
+    # this operation takes many hours 
+    loadExtra(dataReg)
 else:
+    # load no data
     subprocess.call(["mkdir", dataDir])
     subprocess.call(["ga4gh_repo", "init", dataReg])
 exit

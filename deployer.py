@@ -34,6 +34,9 @@ class deployer:
         # get the comamnd line arguments
         args = self.commandParser(funnelSecret, ga4ghSecret)
 
+        if args.vagrant:
+            args.keycloakIP = args.ga4ghIP = args.vagrantIP
+
         # override the other ip address if ip specified
         if args.ip:
             args.keycloakIP = args.ga4ghIP = args.funnelIP = args.ip
@@ -70,33 +73,38 @@ class deployer:
         rewriteGroup = parser.add_mutually_exclusive_group() 
         deployGroup = parser.add_mutually_exclusive_group()
 
-        commandList = [ ["-i",   "--ip",                      None,                     "ip",                    "store", "Set the ip address of both servers"],
-                        ["-kip", "--keycloak-ip",             "127.0.0.1",              "keycloakIP",            "store", "Set the ip address of the keycloak server"],
-                        ["-gip", "--ga4gh-ip",                "127.0.0.1",              "ga4ghIP",               "store", "Set the ip address of the ga4gh server"],
-                        ["-kp",  "--keycloak-port",           "8080",                   "keycloakPort",          "store", "Set the port number of the keycloak server"], 
-                        ["-gp",  "--ga4gh-port",              "8000",                   "ga4ghPort",             "store", "Set the port number of the ga4gh server"],
-                        ["-r",   "--realm-name",              "CanDIG",                 "realmName",             "store", "Set the keycloak realm name"],
-                        ["-gid", "--ga4gh-id",                "ga4gh",                  "ga4ghID",               "store", "Set the ga4gh server client id"],
-                        ["-kcn", "--keycloak-container-name", "keycloak_candig_server", "keycloakContainerName", "store", "Set the keycloak container name"],
-                        ["-gcn", "--ga4gh-container-name",    "ga4gh_candig_server",    "ga4ghContainerName",    "store", "Set the ga4gh server container name"],
-                        ["-kin", "--keycloak-image-name",     "keycloak_candig_server", "keycloakImageName",     "store", "Set the keycloak image tag"],
-                        ["-gin", "--ga4gh-image-name",        "ga4gh_candig_server",    "ga4ghImageName",        "store", "Set the ga4gh image tag"],
-                        ["-au",  "--admin-username",          "admin",                  "adminUsername",         "store", "Set the administrator account username"],
-                        ["-uu",  "--user-username",           "user",                   "userUsername",          "store", "Set the user account username"],
-                        ["-gsrc", "--ga4gh-src",              "ga4gh-server",           "ga4ghSrc",              "store", "Use an existing source directory"],
-                        ["-gs",  "--ga4gh-secret",            ga4ghSecret,              "ga4ghSecret",           "store", "Client secret for the ga4gh server"],
-                        ["-fin", "--funnel-image-name",       "funnel_candig_server",   "funnelImageName",       "store", "Set the funnel image tag"],
-                        ["-fcn", "--funnel-container-name",   "funnel_candig_server",   "funnelContainerName",   "store", "Set the funnel container name"],
-                        ["-fp",  "--funnel-port",             "3002",                   "funnelPort",            "store", "Set the funnel port number"],
-                        ["-fip", "--funnel-ip",               "127.0.0.1",              "funnelIP",              "store", "Set the funnel ip address"],
-                        ["-fid", "--funnel-id",               "funnel",                 "funnelID",              "store", "Set the funnel client id"],
-                        ["-fs",  "--funnel-secret",           funnelSecret,             "funnelSecret",          "store", "Set the funnel client secret"],
-                        ["-f",   "--funnel",                  False,                    "funnel",                "store_true", "Deploy the funnel server"],
-                        ["-t",   "--token-tracer",            False,                    "tokenTracer",           "store_true", "Deploy and run the token tracer program"],
-                        ["-ng",  "--no-ga4gh",                False,                    "noGa4gh",               "store_true", "Do not deploy the GA4GH server"],
-                        ["-vip", "--vagrant-ip",              "192.168.12.123",         "vagrantIP",             "store",      "The IP on which the Vagrant container is accessible"]]
-                        #["-upwd", "--user-password",          "user",                   "userPassword",          "store",      "Set the user account password"],
-                        #["-apwd", "--admin-password",         "admin",                  "adminPassword",         "store",      "Set the administrator password"]] 
+        localhost = "127.0.0.1"
+        keycloakName = "keycloak_candig_server"
+        ga4ghName =  "ga4gh_candig_server"
+        funnelName = "funnel_candig_server"
+
+        commandList = [ ["-i",   "--ip",                      None,           "ip",                    "store", "Set the ip address of both servers"],
+                        ["-kip", "--keycloak-ip",             localhost,      "keycloakIP",            "store", "Set the ip address of the keycloak server"],
+                        ["-gip", "--ga4gh-ip",                localhost,      "ga4ghIP",               "store", "Set the ip address of the ga4gh server"],
+                        ["-kp",  "--keycloak-port",           "8080",         "keycloakPort",          "store", "Set the port number of the keycloak server"], 
+                        ["-gp",  "--ga4gh-port",              "8000",         "ga4ghPort",             "store", "Set the port number of the ga4gh server"],
+                        ["-r",   "--realm-name",              "CanDIG",       "realmName",             "store", "Set the keycloak realm name"],
+                        ["-gid", "--ga4gh-id",                "ga4gh",        "ga4ghID",               "store", "Set the ga4gh server client id"],
+                        ["-kcn", "--keycloak-container-name", keycloakName,   "keycloakContainerName", "store", "Set the keycloak container name"],
+                        ["-gcn", "--ga4gh-container-name",    ga4ghName,      "ga4ghContainerName",    "store", "Set the ga4gh server container name"],
+                        ["-kin", "--keycloak-image-name",     keycloakName,   "keycloakImageName",     "store", "Set the keycloak image tag"],
+                        ["-gin", "--ga4gh-image-name",        ga4ghName,      "ga4ghImageName",        "store", "Set the ga4gh image tag"],
+                        ["-au",  "--admin-username",          "admin",        "adminUsername",         "store", "Set the administrator account username"],
+                        ["-uu",  "--user-username",           "user",         "userUsername",          "store", "Set the user account username"],
+                        ["-gsrc", "--ga4gh-src",              "ga4gh-server", "ga4ghSrc",              "store", "Use an existing source directory"],
+                        ["-gs",  "--ga4gh-secret",            ga4ghSecret,    "ga4ghSecret",           "store", "Client secret for the ga4gh server"],
+                        ["-fin", "--funnel-image-name",       funnelName,     "funnelImageName",       "store", "Set the funnel image tag"],
+                        ["-fcn", "--funnel-container-name",   funnelName,     "funnelContainerName",   "store", "Set the funnel container name"],
+                        ["-fp",  "--funnel-port",             "3002",         "funnelPort",            "store", "Set the funnel port number"],
+                        ["-fip", "--funnel-ip",               localhost,      "funnelIP",              "store", "Set the funnel ip address"],
+                        ["-fid", "--funnel-id",               "funnel",       "funnelID",              "store", "Set the funnel client id"],
+                        ["-fs",  "--funnel-secret",           funnelSecret,   "funnelSecret",          "store", "Set the funnel client secret"],
+                        ["-f",   "--funnel",                  False,          "funnel",                "store_true", "Deploy the funnel server"],
+                        ["-t",   "--token-tracer",            False,           "tokenTracer",          "store_true", "Deploy and run the token tracer program"],
+                        ["-ng",  "--no-ga4gh",                False,           "noGa4gh",              "store_true", "Do not deploy the GA4GH server"],
+                        ["-vip", "--vagrant-ip",              localhost,       "vagrantIP",            "store",      "The IP on which the Vagrant container is accessible"],
+                        ["-upwd", "--user-password",          "user",          "userPassword",         "store",      "Set the user account password"],
+                        ["-apwd", "--admin-password",         "admin",         "adminPassword",        "store",      "Set the administrator password"]] 
 
         for subList in commandList:
             parser.add_argument(subList[0], subList[1], default=subList[2], dest=subList[3], action=subList[4], help=subList[5])
@@ -132,7 +140,7 @@ class deployer:
 
         # choose between docker and singularity keycloak deployment
         if ((not args.vagrant) and (not args.singularity)):
-            self.keycloakDeploy(args.keycloakImageName, args.keycloakContainerName, keycloakDir, args.keycloakPort, args.tokenTracer)
+            self.keycloakDeploy(keycloakDir, args)
         elif args.singularity:
             self.singularityKeycloakDeploy(vagrantImgDir)
 
@@ -168,15 +176,23 @@ class deployer:
             return
 
 
-    def keycloakDeploy(self, keycloakImageName, keycloakContainerName, keycloakDir, keycloakPort, tokenTracer):
+    def keycloakDeploy(self, keycloakDir, args):
         """
         Deploys the keycloak server
 
         Builds the keyserver docker image and runs it
         """
 
-        tokenArg = "tokenTracer=" + str(tokenTracer)
-        buildKeycloakCode = subprocess.call(["docker", "build", "-t", keycloakImageName, "--build-arg", tokenArg, keycloakDir])
+        tokenArg = "tokenTracer=" + str(args.tokenTracer)
+        realmArg = "realmName=" + args.realmName
+        adminNameArg = "adminUsername=" + args.adminUsername
+        adminPwdArg = "adminPassword=" + args.adminPassword
+        userNameArg = "userUsername=" + args.userUsername
+        userPwdArg = "userPassword=" + args.userPassword
+  
+        buildKeycloakCode = subprocess.call(["docker", "build", "-t", args.keycloakImageName, "--build-arg", tokenArg, "--build-arg", realmArg, \
+                                             "--build-arg", adminNameArg, "--build-arg", adminPwdArg, "--build-arg", userNameArg, "--build-arg", \
+                                             userPwdArg, keycloakDir])
         # check if docker is working
         # abort if docker fails or is inaccessible
         if buildKeycloakCode != 0:
@@ -186,10 +202,11 @@ class deployer:
         # we need to capture port errors!
         # without interrupting the server
         # run the keycloak server as a background process
-        if tokenTracer:
-            subprocess.Popen(["docker", "run", "--cap-add", "net_raw", "--cap-add", "net_admin", "-p", keycloakPort + ":8080", "--name", keycloakContainerName, keycloakImageName])
+        if args.tokenTracer:
+            subprocess.Popen(["docker", "run", "--cap-add", "net_raw", "--cap-add", "net_admin", "-p", \
+                              args.keycloakPort + ":8080", "--name", args.keycloakContainerName, args.keycloakImageName])
         else:
-            subprocess.Popen(["docker", "run", "-p", keycloakPort + ":8080", "--name", keycloakContainerName, keycloakImageName])
+            subprocess.Popen(["docker", "run", "-p", args.keycloakPort + ":8080", "--name", args.keycloakContainerName, args.keycloakImageName])
 
 
         
