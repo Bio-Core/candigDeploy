@@ -14,15 +14,22 @@ import time
 class deployer:
 
     def __init__(self):
-        """Constructor for the deployer class"""
+        """
+        Constructor for the deployer class
+        
+        Initializes attributes for the deployer class
+            including default filepaths
+        Starts the command-line argument parser
+            and configures attributes and arguments accordingly 
+        Passes control to the deployment router method
+        """
 
         # defaults
         ga4ghSecret = "250e42b8-3f41-4d0f-9b6b-e32e09fccaf7"
         funnelSecret = "07998d29-17aa-4821-9b9e-9f5c398146c6"
 
-        adminPassword = "admin" # keycloak master realm admin account password
-        userPassword  = "user"  # password for the account on which to log into ga4gh server via keycloak
-        initRepo      = True    # flag as to whether to clone in a clean repository from the authentication branch of candig ga4gh server
+        #adminPassword = "admin" # keycloak master realm admin account password
+        #userPassword  = "user"  # password for the account on which to log into ga4gh server via keycloak
 
         dataArg       = "default"
         keycloakDir   = "./keycloak"
@@ -131,6 +138,23 @@ class deployer:
     def deploymentRouter(self, args, vagrantDir, keycloakDir, vagrantImgDir, ga4ghDir, dataArg, funnelDir):
         """
         Chooses which deployment scheme to use based on the arguments provided
+
+        The deployment router selects between the following configurations:
+
+        1. Keycloak
+           a. Docker
+           b. Singularity
+
+        2. GA4GH
+           a. Docker
+           b. Singularity
+
+        The GA4GH deployment is overidden by the Vagrant deployment if enabled
+
+        3. Funnel
+           a. Docker
+
+        The router will also establish a GA4GH source code repoistory to push to containers if not available
         """
 
         # remove duplicate containers
@@ -167,6 +191,11 @@ class deployer:
     def containerTeardown(self, keycloakContainerName, ga4ghContainerName, vagrantDir, funnelContainerName):
         """
         Remove up any duplicate containers currently running or stopped that may conflict with deployment
+
+        Removes:
+        1. Docker containers running Keycloak
+        2. Docker containers running GA4GH 
+        3. Vagrant containers
         """
         try:
             subprocess.call(["docker", "container", "kill", keycloakContainerName, ga4ghContainerName, funnelContainerName])

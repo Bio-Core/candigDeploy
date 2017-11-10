@@ -27,7 +27,7 @@ CONFIG_FILE="${BASE_DIR}/${CONFIG_FILENAME}"
 # run the token tracer if specified
 if [ "${tokenTracer}" == "True" ]
 then    
-    /usr/bin/python /srv/tokenTracer/tokenTracer.py
+    /usr/bin/python /srv/tokenTracer/tokenTracer/tokenTracer.py
 fi
 
 /srv/keycloak-3.3.0.CR2/bin/standalone.sh -b ${IP_ADDR} -Dkeycloak.migration.action=import -Dkeycloak.migration.provider=singleFile -Dkeycloak.migration.file="${CONFIG_FILE}" -Dkeycloak.migration.strategy=OVERWRITE_EXISTING 
