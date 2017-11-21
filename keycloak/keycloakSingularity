@@ -33,6 +33,11 @@ From: ubuntu:latest
     chmod +x /srv/keycloakStart.sh
     chmod +x /srv/keycloakPassword.sh
 
+    chmod o+w /srv/keycloak-3.3.0.CR2/standalone
+    chmod o+w /srv/keycloak-3.3.0.CR2/standalone/tmp
+    chmod o+w /srv/keycloak-3.3.0.CR2/standalone/configuration
+    chmod o+rw /srv/keycloak-3.3.0.CR2/standalone/configuration/*
+
 %runscript
 
     # Start keycloak when the container is run

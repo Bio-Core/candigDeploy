@@ -1,0 +1,8 @@
+include LICENSE.txt
+include README.rst
+include docs/*.txt
+include docs/images/*.png
+include funnel/*
+include ga4gh/*
+include keycloak/*
+include vagrant/*

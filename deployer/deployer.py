@@ -22,24 +22,27 @@ class deployer:
         Starts the command-line argument parser
             and configures attributes and arguments accordingly 
         Passes control to the deployment router method
+
+        Parameters: None
+
+        Returns: deployer
         """
 
         # defaults
-        ga4ghSecret = "250e42b8-3f41-4d0f-9b6b-e32e09fccaf7"
-        funnelSecret = "07998d29-17aa-4821-9b9e-9f5c398146c6"
-
-        #adminPassword = "admin" # keycloak master realm admin account password
-        #userPassword  = "user"  # password for the account on which to log into ga4gh server via keycloak
+        self.ga4ghSecret = "250e42b8-3f41-4d0f-9b6b-e32e09fccaf7"
+        self.funnelSecret = "07998d29-17aa-4821-9b9e-9f5c398146c6"
 
         dataArg       = "default"
-        keycloakDir   = "./keycloak"
-        ga4ghDir      = "./ga4gh"
-        vagrantDir    = "./vagrant"
-        funnelDir     = "./funnel"
+        keycloakDir   = os.path.abspath("./keycloak")
+        ga4ghDir      = os.path.abspath("./ga4gh")
+        vagrantDir    = os.path.abspath("./vagrant")
+        funnelDir     = os.path.abspath("./funnel")
         vagrantImgDir = "/home/vagrant"
 
+        #print(ga4ghDir)
+
         # get the comamnd line arguments
-        args = self.commandParser(funnelSecret, ga4ghSecret)
+        args = self.commandParser(sys.argv[1:])
 
         if args.vagrant:
             args.keycloakIP = args.ga4ghIP = args.vagrantIP
@@ -58,21 +61,30 @@ class deployer:
         # initiate the deployment procedure if deploy has been specified
         if args.deploy:
             self.deploymentRouter(args, vagrantDir, keycloakDir, vagrantImgDir, ga4ghDir, dataArg, funnelDir)
-            self.printDeploy(args, userPassword, adminPassword)
+            self.printDeploy(args)
 
         exit()
 
-    def commandParser(self, funnelSecret, ga4ghSecret):
+    def commandParser(self, commandArgs):
         """
         Parsers for and returns the values of command line arguments
 
         Creates the command line argument parser which parsers for arguments passed through
         the command line interface
-        Returns the values of the arguments in the object args
+
+        Parameters:
+
+        commandArgs
+
+        Returns: 
+
+        argsObject - An object whose attribute names correspond to the argument fields
+                     and whose values are the values supplied to the arguments (or default otherwise)
         """
 
         # initialize the command line arguments
-        parser = argparse.ArgumentParser(description="Deployment script for CanDIG which deploys the GA4GH and Keycloak servers", add_help=True)
+        descLine = "Deployment script for CanDIG which deploys the GA4GH and Keycloak servers"
+        parser = argparse.ArgumentParser(description=descLine, add_help=True)
 
 
         # having no data, additional data, or the default data are to be mutually exclusive
@@ -85,33 +97,87 @@ class deployer:
         ga4ghName =  "ga4gh_candig_server"
         funnelName = "funnel_candig_server"
 
-        commandList = [ ["-i",   "--ip",                      None,           "ip",                    "store", "Set the ip address of both servers"],
-                        ["-kip", "--keycloak-ip",             localhost,      "keycloakIP",            "store", "Set the ip address of the keycloak server"],
-                        ["-gip", "--ga4gh-ip",                localhost,      "ga4ghIP",               "store", "Set the ip address of the ga4gh server"],
-                        ["-kp",  "--keycloak-port",           "8080",         "keycloakPort",          "store", "Set the port number of the keycloak server"], 
-                        ["-gp",  "--ga4gh-port",              "8000",         "ga4ghPort",             "store", "Set the port number of the ga4gh server"],
-                        ["-r",   "--realm-name",              "CanDIG",       "realmName",             "store", "Set the keycloak realm name"],
-                        ["-gid", "--ga4gh-id",                "ga4gh",        "ga4ghID",               "store", "Set the ga4gh server client id"],
-                        ["-kcn", "--keycloak-container-name", keycloakName,   "keycloakContainerName", "store", "Set the keycloak container name"],
-                        ["-gcn", "--ga4gh-container-name",    ga4ghName,      "ga4ghContainerName",    "store", "Set the ga4gh server container name"],
-                        ["-kin", "--keycloak-image-name",     keycloakName,   "keycloakImageName",     "store", "Set the keycloak image tag"],
-                        ["-gin", "--ga4gh-image-name",        ga4ghName,      "ga4ghImageName",        "store", "Set the ga4gh image tag"],
-                        ["-au",  "--admin-username",          "admin",        "adminUsername",         "store", "Set the administrator account username"],
-                        ["-uu",  "--user-username",           "user",         "userUsername",          "store", "Set the user account username"],
-                        ["-gsrc", "--ga4gh-src",              "ga4gh-server", "ga4ghSrc",              "store", "Use an existing source directory"],
-                        ["-gs",  "--ga4gh-secret",            ga4ghSecret,    "ga4ghSecret",           "store", "Client secret for the ga4gh server"],
-                        ["-fin", "--funnel-image-name",       funnelName,     "funnelImageName",       "store", "Set the funnel image tag"],
-                        ["-fcn", "--funnel-container-name",   funnelName,     "funnelContainerName",   "store", "Set the funnel container name"],
-                        ["-fp",  "--funnel-port",             "3002",         "funnelPort",            "store", "Set the funnel port number"],
-                        ["-fip", "--funnel-ip",               localhost,      "funnelIP",              "store", "Set the funnel ip address"],
-                        ["-fid", "--funnel-id",               "funnel",       "funnelID",              "store", "Set the funnel client id"],
-                        ["-fs",  "--funnel-secret",           funnelSecret,   "funnelSecret",          "store", "Set the funnel client secret"],
-                        ["-f",   "--funnel",                  False,          "funnel",                "store_true", "Deploy the funnel server"],
-                        ["-t",   "--token-tracer",            False,           "tokenTracer",          "store_true", "Deploy and run the token tracer program"],
-                        ["-ng",  "--no-ga4gh",                False,           "noGa4gh",              "store_true", "Do not deploy the GA4GH server"],
-                        ["-vip", "--vagrant-ip",              localhost,       "vagrantIP",            "store",      "The IP on which the Vagrant container is accessible"],
-                        ["-upwd", "--user-password",          "user",          "userPassword",         "store",      "Set the user account password"],
-                        ["-apwd", "--admin-password",         "admin",         "adminPassword",        "store",      "Set the administrator password"]] 
+        commandList = [ ["-i",   "--ip",                      
+                         None,           "ip",                    
+                         "store", "Set the ip address of both servers"],
+                        ["-kip", "--keycloak-ip",             
+                         localhost,      "keycloakIP",            
+                         "store", "Set the ip address of the keycloak server"],
+                        ["-gip", "--ga4gh-ip",                
+                         localhost,      "ga4ghIP",               
+                         "store", "Set the ip address of the ga4gh server"],
+                        ["-kp",  "--keycloak-port",           
+                         "8080",         "keycloakPort",          
+                         "store", "Set the port number of the keycloak server"], 
+                        ["-gp",  "--ga4gh-port",              
+                         "8000",         "ga4ghPort",             
+                         "store", "Set the port number of the ga4gh server"],
+                        ["-r",   "--realm-name",              
+                         "CanDIG",       "realmName",             
+                         "store", "Set the keycloak realm name"],
+                        ["-gid", "--ga4gh-id",                
+                         "ga4gh",        "ga4ghID",               
+                         "store", "Set the ga4gh server client id"],
+                        ["-kcn", "--keycloak-container-name", 
+                         keycloakName,   "keycloakContainerName", 
+                         "store", "Set the keycloak container name"],
+                        ["-gcn", "--ga4gh-container-name",    
+                         ga4ghName,      "ga4ghContainerName",    
+                         "store", "Set the ga4gh server container name"],
+                        ["-kin", "--keycloak-image-name",     
+                         keycloakName,   "keycloakImageName",     
+                         "store", "Set the keycloak image tag"],
+                        ["-gin", "--ga4gh-image-name",        
+                         ga4ghName,      "ga4ghImageName",        
+                         "store", "Set the ga4gh image tag"],
+                        ["-au",  "--admin-username",          
+                         "admin",        "adminUsername",         
+                         "store", "Set the administrator account username"],
+                        ["-uu",  "--user-username",           
+                         "user",         "userUsername",          
+                         "store", "Set the user account username"],
+                        ["-gsrc", "--ga4gh-src",              
+                         "ga4gh-server", "ga4ghSrc",              
+                         "store", "Use an existing source directory"],
+                        ["-gs",  "--ga4gh-secret",            
+                         self.ga4ghSecret,    "ga4ghSecret",           
+                         "store", "Client secret for the ga4gh server"],
+                        ["-fin", "--funnel-image-name",       
+                         funnelName,     "funnelImageName",       
+                         "store", "Set the funnel image tag"],
+                        ["-fcn", "--funnel-container-name",   
+                         funnelName,     "funnelContainerName",   
+                         "store", "Set the funnel container name"],
+                        ["-fp",  "--funnel-port",             
+                         "3002",         "funnelPort",            
+                         "store", "Set the funnel port number"],
+                        ["-fip", "--funnel-ip",               
+                         localhost,      "funnelIP",              
+                         "store", "Set the funnel ip address"],
+                        ["-fid", "--funnel-id",               
+                         "funnel",       "funnelID",              
+                         "store", "Set the funnel client id"],
+                        ["-fs",  "--funnel-secret",           
+                         self.funnelSecret,   "funnelSecret",          
+                         "store", "Set the funnel client secret"],
+                        ["-f",   "--funnel",                  
+                         False,          "funnel",                
+                         "store_true", "Deploy the funnel server"],
+                        ["-t",   "--token-tracer",            
+                         False,           "tokenTracer",          
+                         "store_true", "Deploy and run the token tracer program"],
+                        ["-ng",  "--no-ga4gh",                
+                         False,           "noGa4gh",              
+                         "store_true", "Do not deploy the GA4GH server"],
+                        ["-vip", "--vagrant-ip",              
+                         localhost,       "vagrantIP",            
+                         "store",      "The IP on which the Vagrant container is accessible"],
+                        ["-upwd", "--user-password",          
+                         "user",          "userPassword",         
+                         "store",      "Set the user account password"],
+                        ["-apwd", "--admin-password",         
+                         "admin",         "adminPassword",        
+                         "store",      "Set the administrator password"]]
 
         for subList in commandList:
             parser.add_argument(subList[0], subList[1], default=subList[2], dest=subList[3], action=subList[4], help=subList[5])
@@ -128,7 +194,7 @@ class deployer:
         parser.add_argument("deploy",   help="Deploy the Keycloak and GA4GH server")        
 
         # parse for command line arguments
-        args = parser.parse_args()
+        args = parser.parse_args(commandArgs)
 
         return args
 
@@ -166,7 +232,7 @@ class deployer:
         if ((not args.vagrant) and (not args.singularity)):
             self.keycloakDeploy(keycloakDir, args)
         elif args.singularity:
-            self.singularityKeycloakDeploy(vagrantImgDir)
+            self.singularityKeycloakDeploy(vagrantImgDir, args.override)
 
         # initialize the repository containing the ga4gh source code locally if unspecified
         if args.ga4ghSrc == "ga4gh-server":   
@@ -176,7 +242,7 @@ class deployer:
         if args.vagrant:        
             self.vagrantDeploy(vagrantDir, args)
         elif args.singularity:
-            self.singularityGa4ghDeploy(vagrantImgDir)
+            self.singularityGa4ghDeploy(vagrantImgDir, args.override)
         elif (not args.noGa4gh):
             self.ga4ghDeploy(args.ga4ghImageName, args.ga4ghContainerName, ga4ghDir, args.ga4ghPort,\
                         args.ga4ghSrc, dataArg)
@@ -196,6 +262,15 @@ class deployer:
         1. Docker containers running Keycloak
         2. Docker containers running GA4GH 
         3. Vagrant containers
+
+        Parameters:
+
+        string keycloakContainerName - The name of the Docker container which holds the Keycloak server
+        string ga4ghContainerName - The name of the Docker container which holds the GA4GH server
+        string vagrantDir - The path of the directory which contains the Vagrantfile
+        string funnelContainerName - The name of the Docker container which holds the Funnel server
+
+        Returns: None
         """
         try:
             subprocess.call(["docker", "container", "kill", keycloakContainerName, ga4ghContainerName, funnelContainerName])
@@ -210,6 +285,13 @@ class deployer:
         Deploys the keycloak server
 
         Builds the keyserver docker image and runs it
+
+        Parameters:
+
+        string keycloakDir - The path of the directory which contains the Keycloak server images
+        argsObject args - The object containing the command line arguments as attributes
+
+        Returns: None
         """
 
         tokenArg = "tokenTracer=" + str(args.tokenTracer)
@@ -232,6 +314,7 @@ class deployer:
         # without interrupting the server
         # run the keycloak server as a background process
         if args.tokenTracer:
+            # net_raw and net_admin are necesary to have the network privileges to packet capture
             subprocess.Popen(["docker", "run", "--cap-add", "net_raw", "--cap-add", "net_admin", "-p", \
                               args.keycloakPort + ":8080", "--name", args.keycloakContainerName, args.keycloakImageName])
         else:
@@ -245,6 +328,17 @@ class deployer:
         Deploys the ga4gh server
 
         Builds the ga4gh server docker image and runs it
+
+        Parameters:
+
+        string ga4ghImageName - 
+        string ga4ghContainerName -
+        string ga4ghDir - 
+        string ga4ghPort - 
+        string ga4ghSrc - 
+        string dataArg -
+
+        Returns: None
         """
 
         # build the ga4gh server
@@ -261,6 +355,13 @@ class deployer:
 
         We should also have an option that deploys them directly via singularity
         This would require us to test it in a linux environment
+
+        Parameters:
+
+        string vagrantDir
+        argsObject args
+
+        Returns: None
         """
 
         os.environ["VAGRANT_IP"] = args.vagrantIP
@@ -271,46 +372,97 @@ class deployer:
 
 
 
-    def singularityKeycloakDeploy(self, imgDir):
-        """Deploy keycloak server via a singularity container"""        
-        keycloakImg = imgDir + "/keycloak.img"
-        subprocess.call(["sudo", "singularity", "build", "--writable", keycloakImg, "keycloak/keycloakSingularity"])
-        subprocess.Popen(["sudo", "singularity", "run", keycloakImg])
+    def singularityKeycloakDeploy(self, imgDir, override):
+        """
+        Deploy keycloak server via a singularity container
+
+        Parameters:
+
+        string imgDir
+
+        Returns: None
+        """        
+        if override:
+           os.remove("keycloak.simg")
+        #keycloakImg = imgDir + "/keycloak.img"
+        #subprocess.call(["sudo", "singularity", "build", "--writable", keycloakImg, "keycloak/keycloakSingularity"])
+        subprocess.call(["singularity", "pull", "--name", "keycloak.img", "shub://DaleDupont/singularity-keycloak:latest"])
+        subprocess.Popen(["singularity", "run", "keycloak.simg"])
 
 
 
-    def singularityGa4ghDeploy(self, imgDir):
-        """Deploy ga4gh server via a singularity container"""
-        ga4ghImg = imgDir + "/ga4gh-server.img"
-        subprocess.call(["sudo", "singularity", "build", "--writable", ga4ghImg, "ga4gh/Singularity"])
-        subprocess.Popen(["sudo", "singularity", "run", ga4ghImg])
+    def singularityGa4ghDeploy(self, imgDir, override):
+        """
+        Deploy ga4gh server via a singularity container
 
+        This deployment scheme does not require root access
+
+        Parameters:
+
+        string imgDir - The path containing the 
+
+        Returns: None
+        """
+        if override:
+            os.remove("ga4gh.simg")
+        #ga4ghImg = imgDir + "/ga4gh-server.img"
+        #subprocess.call(["sudo", "singularity", "build", "--writable", ga4ghImg, "ga4gh/Singularity"])
+        subprocess.call(["singularity", "pull", "--name", "ga4gh.img", "shub://DaleDupont/singularity-ga4gh:latest"])
+        subprocess.Popen(["singularity", "run", "ga4gh.simg"])
 
 
     def funnelDeploy(self, funnelImageName, funnelContainerName, funnelPort, funnelDir):
-        """Deploy the funnel server via docker"""
+        """
+        Deploy the funnel server via docker
+
+        Parameters:
+
+        string funnelImageName
+        string funnelContainerName
+        string funnelPort
+        string funnelDir
+
+        Returns: None
+        """
         subprocess.call(["docker", "build", "-t", funnelImageName, funnelDir])
+
+        # We must allow Funnel to call Docker from inside one of Docker's container
+        # Hence we bind one of docker's sockets into its own container
         subprocess.Popen(["docker", "run", "-v", "/var/run/docker.sock:/var/run/docker.sock", "-p", funnelPort + ":3002", "--name", funnelContainerName, funnelImageName])
 
 
 
-    def printDeploy(self, args, userPassword, adminPassword):
-        """Prints the login information post-deployment"""
+    def printDeploy(self, args):
+        """
+        Prints the login information post-deployment
+
+        Parameters:
+
+        argsObject args - An object containing the command-line arguments as attributes
+
+        Returns: None
+        """
         print("\nDeployment Complete.\n")
         print("Keycloak is accessible at:")
-        print("IMAGE:     " + args.keycloakImageName) 
-        print("CONTAINER: " + args.keycloakContainerName)
+
+        if not args.singularity:
+            print("IMAGE:     " + args.keycloakImageName) 
+            print("CONTAINER: " + args.keycloakContainerName)
+
         print("IP:PORT:   " + args.keycloakIP + ":" + args.keycloakPort)
         print("\nGA4GH Server is accessible at:")
-        print("IMAGE:     " + args.ga4ghImageName)
-        print("CONTAINER: " + args.ga4ghContainerName)
+
+        if not args.singularity:
+            print("IMAGE:     " + args.ga4ghImageName)
+            print("CONTAINER: " + args.ga4ghContainerName)
+
         print("IP:PORT:   " + args.ga4ghIP + ":" + args.ga4ghPort)
         print("\nUser Account:")
         print("USERNAME:  " + args.userUsername)
-        print("PASSWORD:  " + userPassword)
+        print("PASSWORD:  " + args.userPassword)
         print("\nAdmin Account:")
         print("USERNAME:  " + args.adminUsername)
-        print("PASSWORD:  " + adminPassword + "\n")
+        print("PASSWORD:  " + args.adminPassword + "\n")
         if args.funnel:
             print("\nFunnel is accessible at:")
             print("IMAGE:     " + args.funnelImageName)
@@ -324,8 +476,16 @@ class deployer:
 
         The configuration file determines the realms, clients, 
         and users that exist on the server and their settings
-        """
+
+        Parameters:
+
+        argsObject args - An object containing the command-line arguments as attributes
+        string keycloakDir - The absolute path of the deployer's keycloak files directory
+
+        Returns: None
+        """        
         keycloakConfigFile = keycloakDir + "/keycloakConfig.json"
+
         with open(keycloakConfigFile, "r") as configFile:
             configData = json.load(configFile)
 
@@ -361,7 +521,16 @@ class deployer:
 
 
     def funnelConfig(self, args, funnelDir):
-        """ Writes the keycloak.json file for the funnel client """
+        """
+        Writes the keycloak.json file for the funnel client
+
+        Parameters:
+
+        argsObject args - An object containing the command-line arguments as attributes
+        string funnelDir - The absolute path of the deployer's funnel files directory
+
+        Returns: None
+        """
         fileName = funnelDir + "/funnel-node/node-client/keycloak.json"
 
         authUrl = "http://" + args.keycloakIP + ":" + args.keycloakPort + "/auth"
@@ -382,6 +551,13 @@ class deployer:
         Writes the new client_secrets.json file 
 
         For registration of ga4gh client with keycloak CanDIG realm
+
+        Parameters:
+
+        string ga4ghSourceDir - The path of the directory containing the GA4GH source code
+        argsObject args - An object containing the command-line arguments as attributes
+
+        Returns: None
         """
 
         fileName           = ga4ghSourceDir + "/client_secrets.json"
@@ -412,6 +588,13 @@ class deployer:
 
         This function is used if there is no pre-existing ga4gh source to use
         This code is later used to build the server on the docker container 
+
+        Parameters:
+
+        string ga4ghDir - The absolute path of the deployer's GA4GH deployment folder
+        argsObject args - An object containing the command-line arguments as attributes
+
+        Returns: None
         """
         ga4ghSourceDir = ga4ghDir + "/ga4gh-server"
         duplicateDir = os.path.exists(ga4ghSourceDir)  
@@ -444,4 +627,8 @@ class deployer:
             print("Command line configuration options for GA4GH will not be used")
 
 
-deployer()
+def main():
+    deployer()
+
+if __name__ == "__main__":
+    main()
