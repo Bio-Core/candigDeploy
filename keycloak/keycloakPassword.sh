@@ -22,16 +22,16 @@ then
 	sleep 2
     done
 
-    /srv/keycloak-3.3.0.CR2/bin/kcadm.sh config credentials --server http://${IP_ADDRESS}:8080/auth --realm master --user ${ADMIN_USERNAME} --password admin
+    /srv/keycloak-3.4.0.Final/bin/kcadm.sh config credentials --server http://${IP_ADDRESS}:8080/auth --realm master --user ${ADMIN_USERNAME} --password admin
 
     if [ "${USER_PASSWORD}" != "user" ]
     then
-        echo ${USER_PASSWORD} | /srv/keycloak-3.3.0.CR2/bin/kcadm.sh set-password -r ${REALM_NAME} --username ${USER_USERNAME}
+        echo ${USER_PASSWORD} | /srv/keycloak-3.4.0.Final/bin/kcadm.sh set-password -r ${REALM_NAME} --username ${USER_USERNAME}
     fi
 
     if [ "${ADMIN_PASSWORD}" != "admin" ]
     then
-        echo ${ADMIN_PASSWORD} | /srv/keycloak-3.3.0.CR2/bin/kcadm.sh set-password -r master --username ${ADMIN_USERNAME}
+        echo ${ADMIN_PASSWORD} | /srv/keycloak-3.4.0.Final/bin/kcadm.sh set-password -r master --username ${ADMIN_USERNAME}
     fi
 fi
 

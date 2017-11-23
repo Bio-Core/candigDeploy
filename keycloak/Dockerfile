@@ -34,8 +34,8 @@ RUN apt-get install -y wget unzip default-jre default-jdk iproute curl libxml2-u
 WORKDIR /srv
 
 # Download and unzip Keycloak
-RUN wget https://downloads.jboss.org/keycloak/3.3.0.CR2/keycloak-3.3.0.CR2.zip
-RUN unzip keycloak-3.3.0.CR2.zip
+RUN wget https://downloads.jboss.org/keycloak/3.4.0.Final/keycloak-3.4.0.Final.zip
+RUN unzip keycloak-3.4.0.Final.zip
 
 # copy over the configuration files for keycloak into the container
 COPY ./keycloakStart.sh /srv/keycloakStart.sh
@@ -43,9 +43,9 @@ COPY ./keycloakConfig.json /srv/keycloakConfig.json
 COPY ./tokenTracerDeploy.sh /srv/tokenTracerDeploy.sh
 COPY ./keycloakPassword.sh /srv/keycloakPassword.sh
 
-RUN chmod +x /srv/keycloakStart.sh
-RUN chmod +x /srv/tokenTracerDeploy.sh
-RUN chmod +x /srv/keycloakPassword.sh
+RUN chmod a+x /srv/keycloakStart.sh
+RUN chmod a+x /srv/tokenTracerDeploy.sh
+RUN chmod a+x /srv/keycloakPassword.sh
 
 RUN /srv/tokenTracerDeploy.sh $tokenTracer
 

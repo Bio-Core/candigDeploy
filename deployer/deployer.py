@@ -7,6 +7,7 @@ import shutil
 import os
 import json
 import time
+import pkg_resources
 
 # this program deploys the keycloak and ga4gh server in docker containers
 # the deployment procedure can be configured using command line arguments
@@ -32,14 +33,14 @@ class deployer:
         self.ga4ghSecret = "250e42b8-3f41-4d0f-9b6b-e32e09fccaf7"
         self.funnelSecret = "07998d29-17aa-4821-9b9e-9f5c398146c6"
 
-        dataArg       = "default"
-        keycloakDir   = os.path.abspath("./keycloak")
-        ga4ghDir      = os.path.abspath("./ga4gh")
-        vagrantDir    = os.path.abspath("./vagrant")
-        funnelDir     = os.path.abspath("./funnel")
-        vagrantImgDir = "/home/vagrant"
+        dataArg = "default"
 
-        #print(ga4ghDir)
+        self.pkgName = __name__
+
+        self.keycloakPath = '/'.join(('..', 'keycloak'))
+        self.ga4ghPath = '/'.join(('..', 'ga4gh'))
+        self.vagrantPath = '/'.join(('..', 'vagrant'))
+        self.funnelPath = '/'.join(('..', 'funnel'))
 
         # get the comamnd line arguments
         args = self.commandParser(sys.argv[1:])
@@ -60,7 +61,7 @@ class deployer:
 
         # initiate the deployment procedure if deploy has been specified
         if args.deploy:
-            self.deploymentRouter(args, vagrantDir, keycloakDir, vagrantImgDir, ga4ghDir, dataArg, funnelDir)
+            self.deploymentRouter(args, dataArg)
             self.printDeploy(args)
 
         exit()
@@ -201,7 +202,7 @@ class deployer:
 
 
 
-    def deploymentRouter(self, args, vagrantDir, keycloakDir, vagrantImgDir, ga4ghDir, dataArg, funnelDir):
+    def deploymentRouter(self, args, dataArg):
         """
         Chooses which deployment scheme to use based on the arguments provided
 
@@ -224,37 +225,37 @@ class deployer:
         """
 
         # remove duplicate containers
-        self.containerTeardown(args.keycloakContainerName, args.ga4ghContainerName, vagrantDir, args.funnelContainerName)
+        self.containerTeardown(args.keycloakContainerName, args.ga4ghContainerName, args.funnelContainerName)
         # configure the keycloak server
-        self.keycloakConfig(args, keycloakDir)
+        self.keycloakConfig(args)
 
         # choose between docker and singularity keycloak deployment
         if ((not args.vagrant) and (not args.singularity)):
-            self.keycloakDeploy(keycloakDir, args)
+            self.keycloakDeploy(args)
         elif args.singularity:
-            self.singularityKeycloakDeploy(vagrantImgDir, args.override)
+            self.singularityKeycloakDeploy(args.override)
 
         # initialize the repository containing the ga4gh source code locally if unspecified
         if args.ga4ghSrc == "ga4gh-server":   
-            self.initSrc(ga4ghDir, args)
+            self.initSrc(args)
 
         # choose between vagrant deployment or singularity or docker deployment of ga4gh server 
         if args.vagrant:        
-            self.vagrantDeploy(vagrantDir, args)
+            self.vagrantDeploy(args)
         elif args.singularity:
-            self.singularityGa4ghDeploy(vagrantImgDir, args.override)
+            self.singularityGa4ghDeploy(args.override)
         elif (not args.noGa4gh):
-            self.ga4ghDeploy(args.ga4ghImageName, args.ga4ghContainerName, ga4ghDir, args.ga4ghPort,\
+            self.ga4ghDeploy(args.ga4ghImageName, args.ga4ghContainerName, args.ga4ghPort,\
                         args.ga4ghSrc, dataArg)
 
         # deploy funnel if selected
         if args.funnel:
-            self.funnelConfig(args, funnelDir)
-            self.funnelDeploy(args.funnelImageName, args.funnelContainerName, args.funnelPort, funnelDir)
+            self.funnelConfig(args)
+            self.funnelDeploy(args.funnelImageName, args.funnelContainerName, args.funnelPort)
 
 
 
-    def containerTeardown(self, keycloakContainerName, ga4ghContainerName, vagrantDir, funnelContainerName):
+    def containerTeardown(self, keycloakContainerName, ga4ghContainerName, funnelContainerName):
         """
         Remove up any duplicate containers currently running or stopped that may conflict with deployment
 
@@ -272,6 +273,8 @@ class deployer:
 
         Returns: None
         """
+        vagrantDir = pkg_resources.resource_filename(self.pkgName, self.vagrantPath)
+
         try:
             subprocess.call(["docker", "container", "kill", keycloakContainerName, ga4ghContainerName, funnelContainerName])
             subprocess.call(["docker", "container", "rm", keycloakContainerName, ga4ghContainerName, funnelContainerName])
@@ -280,7 +283,7 @@ class deployer:
             return
 
 
-    def keycloakDeploy(self, keycloakDir, args):
+    def keycloakDeploy(self, args):
         """
         Deploys the keycloak server
 
@@ -301,9 +304,12 @@ class deployer:
         userNameArg = "userUsername=" + args.userUsername
         userPwdArg = "userPassword=" + args.userPassword
   
-        buildKeycloakCode = subprocess.call(["docker", "build", "-t", args.keycloakImageName, "--build-arg", tokenArg, "--build-arg", realmArg, \
-                                             "--build-arg", adminNameArg, "--build-arg", adminPwdArg, "--build-arg", userNameArg, "--build-arg", \
-                                             userPwdArg, keycloakDir])
+
+        keycloakDir = pkg_resources.resource_filename(self.pkgName, self.keycloakPath)
+        keyProc = ["docker", "build", "-t", args.keycloakImageName, "--build-arg", tokenArg, "--build-arg", realmArg, \
+                   "--build-arg", adminNameArg, "--build-arg", adminPwdArg, "--build-arg", userNameArg, "--build-arg", \
+                   userPwdArg, keycloakDir]
+        buildKeycloakCode = subprocess.call(keyProc)
         # check if docker is working
         # abort if docker fails or is inaccessible
         if buildKeycloakCode != 0:
@@ -323,7 +329,7 @@ class deployer:
 
         
 
-    def ga4ghDeploy(self, ga4ghImageName, ga4ghContainerName, ga4ghDir, ga4ghPort, ga4ghSrc, dataArg):
+    def ga4ghDeploy(self, ga4ghImageName, ga4ghContainerName, ga4ghPort, ga4ghSrc, dataArg):
         """
         Deploys the ga4gh server
 
@@ -344,12 +350,16 @@ class deployer:
         # build the ga4gh server
         srcArg = "sourceDir=" + ga4ghSrc
         dataArg = "dataArg=" + dataArg
-        subprocess.call(["docker",  "build", "-t", ga4ghImageName, "--build-arg", srcArg, "--build-arg", dataArg, ga4ghDir])
+
+        ga4ghDir = pkg_resources.resource_filename(self.pkgName, self.ga4ghPath)
+        build = ["docker",  "build", "-t", ga4ghImageName, "--build-arg", srcArg, "--build-arg", dataArg, ga4ghDir]
+        subprocess.call(build)
         # run the ga4gh server
-        subprocess.Popen(["docker", "run", "-p", ga4ghPort + ":8000", "--name", ga4ghContainerName, ga4ghImageName])
+        run = ["docker", "run", "-p", ga4ghPort + ":8000", "--name", ga4ghContainerName, ga4ghImageName]
+        subprocess.Popen(run)
 
 
-    def vagrantDeploy(self, vagrantDir, args):
+    def vagrantDeploy(self, args):
         """
         Deploy ga4gh via singularity through a vagrant container
 
@@ -368,11 +378,12 @@ class deployer:
         os.environ["KEYCLOAK_PORT"] = args.keycloakPort
         os.environ["GA4GH_PORT"] = args.ga4ghPort
 
+        vagrantDir = pkg_resources.resource_filename(self.pkgName, self.vagrantPath)
         subprocess.call(["vagrant", "up"], cwd=vagrantDir) 
 
 
 
-    def singularityKeycloakDeploy(self, imgDir, override):
+    def singularityKeycloakDeploy(self, override):
         """
         Deploy keycloak server via a singularity container
 
@@ -391,7 +402,7 @@ class deployer:
 
 
 
-    def singularityGa4ghDeploy(self, imgDir, override):
+    def singularityGa4ghDeploy(self, override):
         """
         Deploy ga4gh server via a singularity container
 
@@ -411,7 +422,7 @@ class deployer:
         subprocess.Popen(["singularity", "run", "ga4gh.simg"])
 
 
-    def funnelDeploy(self, funnelImageName, funnelContainerName, funnelPort, funnelDir):
+    def funnelDeploy(self, funnelImageName, funnelContainerName, funnelPort):
         """
         Deploy the funnel server via docker
 
@@ -424,11 +435,15 @@ class deployer:
 
         Returns: None
         """
-        subprocess.call(["docker", "build", "-t", funnelImageName, funnelDir])
+
+        funnelDir = pkg_resources.resource_filename(self.pkgName, self.funnelPath)
+        build = ["docker", "build", "-t", funnelImageName, funnelDir]
+        subprocess.call(build)
 
         # We must allow Funnel to call Docker from inside one of Docker's container
         # Hence we bind one of docker's sockets into its own container
-        subprocess.Popen(["docker", "run", "-v", "/var/run/docker.sock:/var/run/docker.sock", "-p", funnelPort + ":3002", "--name", funnelContainerName, funnelImageName])
+        run = ["docker", "run", "-v", "/var/run/docker.sock:/var/run/docker.sock", "-p", funnelPort + ":3002", "--name", funnelContainerName, funnelImageName]
+        subprocess.Popen(run)
 
 
 
@@ -470,7 +485,7 @@ class deployer:
             print("IP:PORT:   " + args.funnelIP + ":" + args.funnelPort)     
 
 
-    def keycloakConfig(self, args, keycloakDir):
+    def keycloakConfig(self, args):
         """
         Writes the keycloak.json configuration file
 
@@ -484,9 +499,12 @@ class deployer:
 
         Returns: None
         """        
-        keycloakConfigFile = keycloakDir + "/keycloakConfig.json"
+        keycloakConfigPath = '/'.join(('..', 'keycloak', 'keycloakConfig.json'))
+        #keycloakConfigFile = keycloakDir + "/keycloakConfig.json"
+        configPath = pkg_resources.resource_filename(self.pkgName, keycloakConfigPath)
 
-        with open(keycloakConfigFile, "r") as configFile:
+        #configFile = pkg_resources.resource_stream(self.pkgName, keycloakConfigPath)
+        with open(configPath, 'r') as configFile:
             configData = json.load(configFile)
 
             ga4ghUrl = "http://" + args.ga4ghIP + ":" + args.ga4ghPort + "/*"
@@ -515,12 +533,12 @@ class deployer:
             configData[0]["clients"][6]["baseUrl"] = "/auth/admin/" + args.realmName + "/console/index.html"
             configData[0]["clients"][6]["redirectUris"]  = ["/auth/admin/" + args.realmName + "/console/*"]
 
-        with open(keycloakConfigFile, "w") as configFile:
+        with open(configPath, "w") as configFile:
             json.dump(configData, configFile, indent=1)
 
 
 
-    def funnelConfig(self, args, funnelDir):
+    def funnelConfig(self, args):
         """
         Writes the keycloak.json file for the funnel client
 
@@ -531,6 +549,7 @@ class deployer:
 
         Returns: None
         """
+        funnelDir = pkg_resources.resource_filename(self.pkgName, self.funnelPath)
         fileName = funnelDir + "/funnel-node/node-client/keycloak.json"
 
         authUrl = "http://" + args.keycloakIP + ":" + args.keycloakPort + "/auth"
@@ -582,7 +601,7 @@ class deployer:
         fileHandle.close()
 
 
-    def initSrc(self, ga4ghDir, args):
+    def initSrc(self, args):
         """
         Initializes the local ga4gh source code repository on the host machine
 
@@ -596,34 +615,37 @@ class deployer:
 
         Returns: None
         """
-        ga4ghSourceDir = ga4ghDir + "/ga4gh-server"
-        duplicateDir = os.path.exists(ga4ghSourceDir)  
+        ga4ghSrc = '/'.join(('..', 'ga4gh', 'ga4gh-server'))
+        srcPath = pkg_resources.resource_filename(self.pkgName, ga4ghSrc)
+        duplicateDir = pkg_resources.resource_exists(self.pkgName, ga4ghSrc)
+        # os.path.exists(ga4ghSourceDir)  
 
         # halt if a duplicate directory exists and no override command has been given
         if (not duplicateDir) or args.override:
             # remove the existing source code if a duplicate directory exists
             # and the override command has been given
             if args.override and duplicateDir:
-               shutil.rmtree(ga4ghSourceDir)
+               shutil.rmtree(srcPath)
 
-            subprocess.call(["git", "clone", "--branch", "authentication", "https://github.com/CanDIG/ga4gh-server.git", ga4ghSourceDir])
+            subprocess.call(["git", "clone", "--branch", "authentication", "https://github.com/CanDIG/ga4gh-server.git", srcPath])
 
             fileDict = { "/config/requirements.txt" : "/requirements.txt",             "/config/frontend.py" : "/ga4gh/server/frontend.py", \
                          "/config/serverconfig.py"  : "/ga4gh/server/serverconfig.py", "/config/dataPrep.py" : "/dataPrep.py", \
                          "/config/application.wsgi" : "/deploy/application.wsgi",      "/config/config.py"   : "/deploy/config.py", \
                          "/config/001-ga4gh.conf"   : "/deploy/001-ga4gh.conf",        "/config/ports.conf"  : "/deploy/ports.conf"} 
-            for file in fileDict:
-                shutil.copyfile(ga4ghDir + file, ga4ghSourceDir + fileDict[file])
+            for ifile in fileDict:
+                ga4ghDir = pkg_resources.resource_filename(self.pkgName, self.ga4ghPath)
+                shutil.copyfile(ga4ghDir + ifile, srcPath + fileDict[ifile])
 
-            self.ga4ghConfig(ga4ghSourceDir, args)
+            self.ga4ghConfig(sourcePath, args)
 
         # reconfigure the client_secrets.json only
         elif (not args.noConfig):
-             clientSecretFile = ga4ghSourceDir + '/client_secrets.json'
+             clientSecretFile = srcPath + '/client_secrets.json'
              os.remove(clientSecretFile)
-             self.ga4ghConfig(ga4ghSourceDir, args)
+             self.ga4ghConfig(srcPath, args)
         else:
-            print("Using existing source directory and configuration " + ga4ghSourceDir)
+            print("Using existing source directory and configuration " + srcPath)
             print("Command line configuration options for GA4GH will not be used")
 
 

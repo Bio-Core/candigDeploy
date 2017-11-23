@@ -48,13 +48,10 @@ COPY ga4gh-server /srv/ga4gh-server
 # Do this as a separate step prior to the build so that changes
 # to the GA4GH Server codebase do not trigger a full rebuild of the
 # pip requirements.
-
 WORKDIR /srv/ga4gh-server
-
-# COPY requirements.txt /srv
 RUN pip install -r requirements.txt
 
-# install the code
+# install the main code
 RUN pip install .
 
 # Write new apache config
