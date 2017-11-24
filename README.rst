@@ -44,10 +44,55 @@ Docker or Vagrant may need a hypervisor such as VirtualBox in order to work.
 1.3 Installation
 --------------------
 
-1.3.1 Pip Installation (root)
-===================================
+1.3.1 Pip Installation (non-root)
+====================================
 
 It is recommended for end-users to install the script via pip as follows:
+
+1. Clone the git repository:
+
+::
+
+    git clone https://github.com/Bio-Core/candigDeploy.git
+
+2. Change directory into the top level of the repository:
+
+::
+
+    cd candigDeploy
+
+3. For a non-root installation, use:
+
+::
+
+    pip install --user .
+
+4. For Linux (Debian) users, add ``~/.local/bin`` to the PATH. For Mac OS users, add ``~/Library/Python/2.7/bin`` to the PATH. This directory contains the installed executable:
+
+::
+
+   PATH=$PATH:~/.local/bin
+   export PATH
+
+This will make the command available in your current terminal. You can verify that it works with the command:
+
+::
+
+    candigDeploy -h
+
+A help menu should appear.
+
+
+5. You can add this command anywhere in your ``~/.bash_profile`` to make the command available whenever you open a new terminal.
+You may have to create this file if it does not exist.
+
+
+1.3.2 Pip Installation (root)
+===================================
+
+Installing the script as root will allow the script to be run as any user.
+However, users will require root privileges to execute the script. 
+Root must also have the dependencies installed system-wide.
 
 1. Clone the git repository:
 
@@ -71,48 +116,6 @@ This will perform a full-system install of the deployer.
 
 The deployer should now be installed as a command-line utility called candigDeploy.
 
-You can verify that it works with the command:
-
-::
-
-    candigDeploy -h
-
-A help menu should appear.
-
-
-
-1.3.2 Pip Installation (non-root)
-====================================
-
-1. Clone the git repository:
-
-::
-
-    git clone https://github.com/Bio-Core/candigDeploy.git
-
-2. Change directory into the top level of the repository:
-
-::
-
-    cd candigDeploy
-
-3. For a non-root installation, use:
-
-::
-
-    pip install . --user
-
-4. Add ``~/.local/bin`` to the PATH. This directory contains the installed executable:
-
-::
-
-   PATH=$PATH:~/.local/bin
-   export PATH
-
-This will make the command available in your current terminal.
-
-5. You can add this command anywhere in your ``~/.bash_profile`` to make the command available whenever you open a new terminal.
-You may have to create this file if it does not exist.
 
 1.3.3 Uninstallation
 =================================

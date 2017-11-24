@@ -1,8 +1,11 @@
 include LICENSE.txt
 include README.rst
-include docs/*.txt
-include docs/images/*.png
-include funnel/*
-include ga4gh/*
-include keycloak/*
-include vagrant/*
+include deployer/*
+include deployer/keycloak/*
+include deployer/vagrant/*
+include deployer/ga4gh/*
+include deployer/ga4gh/config/*
+include deployer/funnel/*
+include deployer/funnel/funnel-node/node-client/*
+include deployer/funnel/funnel-node/node-client/public/*
+include deployer/funnel/funnel-node/node-resource/*

@@ -37,10 +37,10 @@ class deployer:
 
         self.pkgName = __name__
 
-        self.keycloakPath = '/'.join(('..', 'keycloak'))
-        self.ga4ghPath = '/'.join(('..', 'ga4gh'))
-        self.vagrantPath = '/'.join(('..', 'vagrant'))
-        self.funnelPath = '/'.join(('..', 'funnel'))
+        self.keycloakPath = '/'.join(('.', 'keycloak'))
+        self.ga4ghPath = '/'.join(('.', 'ga4gh'))
+        self.vagrantPath = '/'.join(('.', 'vagrant'))
+        self.funnelPath = '/'.join(('.', 'funnel'))
 
         # get the comamnd line arguments
         args = self.commandParser(sys.argv[1:])
@@ -499,7 +499,7 @@ class deployer:
 
         Returns: None
         """        
-        keycloakConfigPath = '/'.join(('..', 'keycloak', 'keycloakConfig.json'))
+        keycloakConfigPath = '/'.join(('.', 'keycloak', 'keycloakConfig.json'))
         #keycloakConfigFile = keycloakDir + "/keycloakConfig.json"
         configPath = pkg_resources.resource_filename(self.pkgName, keycloakConfigPath)
 
@@ -615,7 +615,7 @@ class deployer:
 
         Returns: None
         """
-        ga4ghSrc = '/'.join(('..', 'ga4gh', 'ga4gh-server'))
+        ga4ghSrc = '/'.join(('.', 'ga4gh', 'ga4gh-server'))
         srcPath = pkg_resources.resource_filename(self.pkgName, ga4ghSrc)
         duplicateDir = pkg_resources.resource_exists(self.pkgName, ga4ghSrc)
         # os.path.exists(ga4ghSourceDir)  
