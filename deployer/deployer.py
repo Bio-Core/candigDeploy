@@ -94,9 +94,9 @@ class deployer:
         deployGroup = parser.add_mutually_exclusive_group()
 
         localhost = "127.0.0.1"
-        keycloakName = "keycloak_candig_server"
-        ga4ghName =  "ga4gh_candig_server"
-        funnelName = "funnel_candig_server"
+        keycloakName = "keycloak_candig"
+        ga4ghName =  "ga4gh_candig"
+        funnelName = "funnel_candig"
 
         commandList = [ ["-i",   "--ip",                      
                          None,           "ip",                    
@@ -637,13 +637,13 @@ class deployer:
                 ga4ghDir = pkg_resources.resource_filename(self.pkgName, self.ga4ghPath)
                 shutil.copyfile(ga4ghDir + ifile, srcPath + fileDict[ifile])
 
-            self.ga4ghConfig(sourcePath, args)
+            self.ga4ghConfig(srcPath, args)
 
         # reconfigure the client_secrets.json only
         elif (not args.noConfig):
-             clientSecretFile = srcPath + '/client_secrets.json'
-             os.remove(clientSecretFile)
-             self.ga4ghConfig(srcPath, args)
+            clientSecretFile = srcPath + '/client_secrets.json'
+            os.remove(clientSecretFile)
+            self.ga4ghConfig(srcPath, args)
         else:
             print("Using existing source directory and configuration " + srcPath)
             print("Command line configuration options for GA4GH will not be used")

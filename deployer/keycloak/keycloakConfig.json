@@ -373,7 +373,7 @@
     "consentRequired": false, 
     "surrogateAuthRequired": false, 
     "notBefore": 0, 
-    "baseUrl": "http://192.168.99.100:3002/*", 
+    "baseUrl": "http://127.0.0.1:3002/*", 
     "secret": "07998d29-17aa-4821-9b9e-9f5c398146c6", 
     "protocolMappers": [
      {
@@ -473,9 +473,9 @@
     "fullScopeAllowed": true, 
     "standardFlowEnabled": true, 
     "redirectUris": [
-     "http://192.168.99.100:3002/*"
+     "http://127.0.0.1:3002/*"
     ], 
-    "adminUrl": "http://192.168.99.100:3002/*", 
+    "adminUrl": "http://127.0.0.1:3002/*", 
     "enabled": true, 
     "clientId": "funnel", 
     "frontchannelLogout": false, 
@@ -503,7 +503,7 @@
     "consentRequired": false, 
     "surrogateAuthRequired": false, 
     "notBefore": 0, 
-    "baseUrl": "http://192.168.99.100:8000/*", 
+    "baseUrl": "http://127.0.0.1:8000/*", 
     "secret": "250e42b8-3f41-4d0f-9b6b-e32e09fccaf7", 
     "protocolMappers": [
      {
@@ -604,9 +604,9 @@
     "fullScopeAllowed": true, 
     "standardFlowEnabled": true, 
     "redirectUris": [
-     "http://192.168.99.100:8000/*"
+     "http://127.0.0.1:8000/*"
     ], 
-    "adminUrl": "http://192.168.99.100:8000/*", 
+    "adminUrl": "http://127.0.0.1:8000/*", 
     "enabled": true, 
     "clientId": "ga4gh", 
     "frontchannelLogout": false, 
