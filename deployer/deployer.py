@@ -177,7 +177,6 @@ class deployer:
         userNameArg = "userUsername=" + args.userUsername
         userPwdArg = "userPassword=" + args.userPassword
   
-
         keycloakDir = pkg_resources.resource_filename(self.pkgName, self.keycloakPath)
         keyProc = ["docker", "build", "-t", args.keycloakImageName, "--build-arg", tokenArg, "--build-arg", realmArg, \
                    "--build-arg", adminNameArg, "--build-arg", adminPwdArg, "--build-arg", userNameArg, "--build-arg", \
@@ -240,15 +239,30 @@ class deployer:
 
         Parameters:
 
-        string imgDir
+        args
 
         Returns: None
         """        
-        if args.override:
-           os.remove("key.img")
+
+        imgPath = '/'.join(('.', 'keycloak', 'key.img'))
+        imgName = pkg_resources.resource_filename(self.pkgName, imgPath)
+
+        duplicateImg = pkg_resources.resource_exists(self.pkgName, imgPath)
+
+        if duplicateImg:
+           os.remove(imgName)
 
         #keycloakImg = imgDir + "/keycloak.img"
         #subprocess.call(["singularity", "pull", "--name", "keycloak.img", "shub://DaleDupont/singularity-keycloak:latest"])
+
+        keycloakDir = pkg_resources.resource_filename(self.pkgName, self.keycloakPath)
+
+        subprocess.call(["wget", "https://github.com/DaleDupont/singularity-keycloak/releases/download/0.0.1/key.img.gz", "-P", keycloakDir])
+
+        zipPath = '/'.join(('.', 'keycloak', 'key.img.gz'))
+        zipName = pkg_resources.resource_filename(self.pkgName, zipPath)
+
+        subprocess.call(["gunzip", zipName])
 
         keycloakConfigPath = '/'.join(('.', 'keycloak', 'keycloakConfig.json'))
         configPath = pkg_resources.resource_filename(self.pkgName, keycloakConfigPath)
@@ -268,7 +282,7 @@ class deployer:
         for envVar in envList:
             os.environ[envVar[0]] = envVar[1]
 
-        subprocess.Popen(["singularity", "run", "--writable", "key.img"])
+        subprocess.Popen(["singularity", "run", "--writable", imgName])
 
 
 
@@ -307,10 +321,15 @@ class deployer:
 
         Returns: None
         """
-        if args.override:
-            os.remove("ga4gh.simg")
 
-        subprocess.call(["singularity", "pull", "--name", "ga4gh.img", "shub://DaleDupont/singularity-ga4gh:latest"])
+        imgPath = '/'.join(('.', 'ga4gh', 'ga4gh.simg'))
+        imgName = pkg_resources.resource_filename(self.pkgName, imgPath)
+        duplicateImg = pkg_resources.resource_exists(self.pkgName, imgPath)
+
+        if args.override:
+            os.remove(imgName)
+
+        subprocess.call(["singularity", "pull", "--name", imgName, "shub://DaleDupont/singularity-ga4gh:latest"])
 
         self.ga4ghBaseConfig()
 
@@ -327,7 +346,7 @@ class deployer:
         for envVar in envList:
             os.environ[envVar[0]] = envVar[1]
 
-        subprocess.Popen(["singularity", "run", "ga4gh.simg"])
+        subprocess.Popen(["singularity", "run", imgName])
 
 
 

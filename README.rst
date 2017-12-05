@@ -145,23 +145,6 @@ Or alternatively, the script may be called without invoking python directly:
    $ ./deployer/deployer.py
 
 
-1.3.5 Vagrant Deployment Issues
-===================================
-
-If the Vagrant containers fail to be removed, delete processes associated with Vagrant using ``ps -e`` and ``kill PID``. 
-You should look for processes under VBox, such as VBoxHeadless and delete those:
-
-::
-
-    $ ps -e | egrep VBox
-
-These processes may also be running vagrant itself or ruby:
-
-::
-
-    $ ps -e | egrep ruby 
-    $ ps -e | egrep vagrant
-
 1.4 Command-Line Arguments:
 ------------------------------
 
@@ -286,14 +269,6 @@ You would then set the deployer to configure GA4GH and Keycloak to listen on 192
 
 The deployer program will create a source code directory for GA4GH if one does not exist. It will reuse this source code in subsequent deployments, and reconfigure it based on the options provided. 
 
-The ``--override`` option can be used to wipe the current source code directory with a default build:
-
-::
-
-    $ candigDeploy -o
-
-The override option will replace the existing source code directory with a new one pulled from git. It is recommended that you use a copy of the source code that you are modifying for development purposes, as this will destroy all of your work. 
-
 1.5.1 Private IP Addresses
 ============================
 
@@ -317,17 +292,8 @@ To deploy Keycloak and GA4GH on separate Docker containers on localhost, invoke 
 
     $ candigDeploy
 
-1.6.2 Example 2: Overriding the source configuration
-===========================================================
 
-To update the GA4GH source files (found in ``/ga4gh/ga4gh-server`` by default), use the ``--override`` option in the deployment. You cannot set options that configure GA4GH when an existing source code directory is being use unless you have this option. 
-
-::
-
-    $ candigDeploy -o
-
-
-1.6.3 Example 3: Keycloak and GA4GH Server Singularity Deployment
+1.6.2 Example 2: Keycloak and GA4GH Server Singularity Deployment
 =============================================================================
 
 To deploy Keycloak and GA4GH on separate Singularity containers, use the ``--singularity`` option:
@@ -338,58 +304,19 @@ To deploy Keycloak and GA4GH on separate Singularity containers, use the ``--sin
 
 Both servers will have the IP address ``127.0.0.1`` accessible on the loopback network interface with the default ports. 
 
-This command will only work in the top-level directory of the repository and in no other directory.
-Python will be unable to find any of the files it needs if run in a different directory. 
-
-The ``--singularity`` option does not work with any of the other command-line arguments. 
 The ``--singularity`` option is designed to specifically work without root privileges in Linux environments
 and will download pre-built and pre-configured images for both Keycloak and GA4GH. 
-You will have to alter them manually to change the configuration until a future release. 
 
-The Keycloak server may not terminate even after calling CTRL+C. 
-In this case, use ``ps -e | egrep java`` or ``ps -e | egrep standalone`` to identify the java process running Keycloak
-and use ``kill PID`` where ``PID`` is the process ID of that java process.
-In the case of GA4GH, kill processes that are invoking the server as listed with ``ps -e | egrep ga4gh_server`` or with ``ps -e | egrep python``.
-
-You may also wish to remove any existing built images that end in .simg if you wish to obtain new images. 
-However, retaining these images will dramatically shorten the deployment time.
+To terminate the servers, kill their outstanding processes with ``kill PID`` where ``PID`` is the process id.
+For Keycloak, the process id can be found using ``ps -e | egrep java`` or ``ps -e | egrep standalone``. 
+For GA4GH, the process id can be found using ``ps -e | egrep python`` or ``ps -e | egrep ga4gh_server``.
 
 You can verify whether the servers have terminated through curl with ``curl 127.0.0.1:8000`` or ``curl 127.0.0.1:8080``.
 
-As it currently stands, the deployment scheme will not work with Keycloak. 
-It is not well understood how to get Keycloak to work with both Singularity and its configuration import features.
-Therefore, this leaves two choices:
+With the Singularity deployment, you may change the IP and port with the ``--ip``, ``--keycloak-port``, and ``--ga4gh-port`` options respectively.
+However, the Singularity deployment does not currently work with ``--realm-name``, ``--user-username``, ``--user-password``, ``--admin-username``, and ``--admin-password``.
 
-1. Run Keycloak directly on the host as a non-root user and feed in the configuration.
-2. Run the Keycloak server on a Singularity container in an unconfigured state.
-
-The first option is the most convenient. The script ``keycloak/tmp/keyBoot.sh`` will perform the following automatically. We can simply download Keycloak as follows:
-
-::
-
-    $ wget https://downloads.jboss.org/keycloak/3.4.0.Final/keycloak-3.4.0.Final.zip
-
-Unzip the file:
-
-::
-
-    $ unzip keycloak-3.4.0.Final.zip
-
-Then run the server with the configuration file:
-
-::
-
-    $ ./keycloak-3.4.0.Final/bin/standalone.sh -Dkeycloak.migration.action=import -Dkeycloak.migration.provider=singleFile -Dkeycloak.migration.file=keycloakConfig.json -Dkeycloak.migration.strategy=OVERWRITE_EXISTING
-
-``-Dkeycloak.migration.file`` must point to the location of the configuration file.
-
-This file can be found under the ``keycloak`` directory of the deployer script. This server should be able to secure the GA4GH server that can be deployed successfully through the ``singularity`` option.
-
-As for the second option, you will have to manually remove the configuration in the keycloakAlt.sh script.
-
-This deployment scheme is in an unacceptable state and development is focused on remedying this in the upcoming releases.
-
-1.6.4 Example 4: Deployment on a different IP address
+1.6.3 Example 3: Deployment on a different IP address
 ===========================================================
 
 To deploy Keycloak and GA4GH server with different IP addresses use the ``--ip`` option. This will change both the Keycloak and GA4GH server IPs. The override option is needed to overwrite any existing configuration files set to a different IP for GA4GH.
@@ -420,7 +347,7 @@ We can also combine these arguments:
 
 Which will set keycloak to listen on IP ``172.101.42.101`` and GA4GH to listen on IP ``172.404.82.404``.
 
-1.6.5 Example 5: Deploy on different ports:
+1.6.4 Example 4: Deploy on different ports:
 ===========================================================
 
 To set keycloak to listen to a different port, use the ``--keycloak-port`` option. GA4GH will be automatically configured to communicate with Keycloak using the new port number:
@@ -446,6 +373,20 @@ In analogy with setting separate IPs, we may combine these options to set differ
     $ candigDeploy -kp 7345 -gp 1984
 
 Which will set Keycloak to listen on port ``7345`` and GA4GH to listen on port ``1984``.
+
+
+1.6.5 Example 5: Reverting the Source Configuration
+===========================================================
+
+To revert the GA4GH source to its original version, (found in ``/ga4gh/ga4gh-server`` by default), use the ``--override`` option in the deployment. 
+This will overwrite an existing changes that you have made to development.
+This is largerly used for testing purposes to test installations from scratch.
+End-users typically will not need to use this option.
+
+::
+
+    $ candigDeploy -o
+
 
 1.6.6 Example 6: Test Data Deployment
 ===========================================================
@@ -510,3 +451,12 @@ The GA4GH and Keycloak servers may be deployed via Vagrant. This deployment assu
 
 This will deploy the servers with the IP configured to ``192.168.99.100`` on default ports for both servers.
 Other command-line options are not supported with Vagrant deployment.
+
+If the Vagrant containers fail to be removed, delete processes associated with Vagrant using ``ps -e`` and ``kill PID``. 
+You should look for processes under VBox, VBoxHeadless, ruby, or vagrant and delete those. 
+
+::
+
+    $ ps -e | egrep VBox
+    $ ps -e | egrep ruby 
+    $ ps -e | egrep vagrant
