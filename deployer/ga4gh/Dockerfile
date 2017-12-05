@@ -56,10 +56,6 @@ RUN pip install .
 
 # Write new apache config
 RUN cp /srv/ga4gh-server/deploy/001-ga4gh.conf /etc/apache2/sites-available/001-ga4gh.conf
-
-# Write application.wsgi
-RUN cp /srv/ga4gh-server/deploy/application.wsgi /srv/application.wsgi
-RUN cp /srv/ga4gh-server/deploy/config.py /srv/config.py
 RUN cp /srv/ga4gh-server/deploy/ports.conf /etc/apache2/ports.conf
 
 # Configure apache to serve GA4GH site

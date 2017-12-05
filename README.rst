@@ -35,6 +35,7 @@ https://github.com/Bio-Core/candigDeploy
 - git
 - Python 2.7+
 - pip
+- PyYAML
 
 Note that Singularity will NOT work on MacOS, and hence requires the Vagrant deployment to use Singularity. 
 
@@ -53,32 +54,32 @@ It is recommended for end-users to install the script via pip as follows:
 
 ::
 
-    git clone https://github.com/Bio-Core/candigDeploy.git
+    $ git clone https://github.com/Bio-Core/candigDeploy.git
 
 2. Change directory into the top level of the repository:
 
 ::
 
-    cd candigDeploy
+    $ cd candigDeploy
 
 3. For a non-root installation, use:
 
 ::
 
-    pip install --user .
+    $ pip install --user .
 
 4. For Linux (Debian) users, add ``~/.local/bin`` to the PATH. For Mac OS users, add ``~/Library/Python/2.7/bin`` to the PATH. This directory contains the installed executable:
 
 ::
 
-   PATH=$PATH:~/.local/bin
-   export PATH
+   $ PATH=$PATH:~/.local/bin
+   $ export PATH
 
 This will make the command available in your current terminal. You can verify that it works with the command:
 
 ::
 
-    candigDeploy -h
+    $ candigDeploy -h
 
 A help menu should appear.
 
@@ -98,19 +99,19 @@ Root must also have the dependencies installed system-wide.
 
 ::
 
-    git clone https://github.com/Bio-Core/candigDeploy.git
+    $ git clone https://github.com/Bio-Core/candigDeploy.git
 
 2. Change directory into the top level of the repository:
 
 ::
 
-    cd candigDeploy
+    $ cd candigDeploy
 
 3. Pip-install locally from the top-level directory:
 
 ::
 
-    pip install .
+    $ pip install .
 
 This will perform a full-system install of the deployer.
 
@@ -124,7 +125,7 @@ To uninstall from the system, use pip:
 
 ::
 
-    pip uninstall candigDeploy
+    $ pip uninstall candigDeploy
 
 
 1.3.4 Running the module directly
@@ -135,13 +136,13 @@ From the top-level directory of the repository we may call the deployer:
 
 ::
 
-   python deployer/deployer.py deploy
+   $ python deployer/deployer.py
 
 Or alternatively, the script may be called without invoking python directly:
 
 ::
 
-   ./deployer/deployer.py deploy
+   $ ./deployer/deployer.py
 
 
 1.3.5 Vagrant Deployment Issues
@@ -152,14 +153,14 @@ You should look for processes under VBox, such as VBoxHeadless and delete those:
 
 ::
 
-    ps -e | egrep VBox
+    $ ps -e | egrep VBox
 
 These processes may also be running vagrant itself or ruby:
 
 ::
 
-    ps -e | egrep ruby 
-    ps -e | egrep vagrant
+    $ ps -e | egrep ruby 
+    $ ps -e | egrep vagrant
 
 1.4 Command-Line Arguments:
 ------------------------------
@@ -170,7 +171,7 @@ the ``-h`` or ``--help`` option:
 
 ::
 
-    candigDeploy --help
+    $ candigDeploy --help
 
 The command-line options can modify the following variables:
 
@@ -281,7 +282,7 @@ You would then set the deployer to configure GA4GH and Keycloak to listen on 192
 
 ::
 
-    candigDeploy -i 192.168.12.1 deploy
+    $ candigDeploy -i 192.168.12.1
 
 The deployer program will create a source code directory for GA4GH if one does not exist. It will reuse this source code in subsequent deployments, and reconfigure it based on the options provided. 
 
@@ -289,7 +290,7 @@ The ``--override`` option can be used to wipe the current source code directory 
 
 ::
 
-    candigDeploy -o deploy
+    $ candigDeploy -o
 
 The override option will replace the existing source code directory with a new one pulled from git. It is recommended that you use a copy of the source code that you are modifying for development purposes, as this will destroy all of your work. 
 
@@ -314,7 +315,7 @@ To deploy Keycloak and GA4GH on separate Docker containers on localhost, invoke 
 
 ::
 
-    candigDeploy deploy
+    $ candigDeploy
 
 1.6.2 Example 2: Overriding the source configuration
 ===========================================================
@@ -323,7 +324,7 @@ To update the GA4GH source files (found in ``/ga4gh/ga4gh-server`` by default), 
 
 ::
 
-    candigDeploy -o deploy
+    $ candigDeploy -o
 
 
 1.6.3 Example 3: Keycloak and GA4GH Server Singularity Deployment
@@ -333,7 +334,7 @@ To deploy Keycloak and GA4GH on separate Singularity containers, use the ``--sin
 
 ::
 
-    candigDeploy -s deploy
+    $ candigDeploy -s
 
 Both servers will have the IP address ``127.0.0.1`` accessible on the loopback network interface with the default ports. 
 
@@ -366,19 +367,19 @@ The first option is the most convenient. The script ``keycloak/tmp/keyBoot.sh`` 
 
 ::
 
-    wget https://downloads.jboss.org/keycloak/3.4.0.Final/keycloak-3.4.0.Final.zip
+    $ wget https://downloads.jboss.org/keycloak/3.4.0.Final/keycloak-3.4.0.Final.zip
 
 Unzip the file:
 
 ::
 
-    unzip keycloak-3.4.0.Final.zip
+    $ unzip keycloak-3.4.0.Final.zip
 
 Then run the server with the configuration file:
 
 ::
 
-    ./keycloak-3.4.0.Final/bin/standalone.sh -Dkeycloak.migration.action=import -Dkeycloak.migration.provider=singleFile -Dkeycloak.migration.file=keycloakConfig.json -Dkeycloak.migration.strategy=OVERWRITE_EXISTING
+    $ ./keycloak-3.4.0.Final/bin/standalone.sh -Dkeycloak.migration.action=import -Dkeycloak.migration.provider=singleFile -Dkeycloak.migration.file=keycloakConfig.json -Dkeycloak.migration.strategy=OVERWRITE_EXISTING
 
 ``-Dkeycloak.migration.file`` must point to the location of the configuration file.
 
@@ -395,7 +396,7 @@ To deploy Keycloak and GA4GH server with different IP addresses use the ``--ip``
 
 ::
 
-    candigDeploy -i 192.168.12.123 deploy
+    $ candigDeploy -i 192.168.12.123
 
 This will cause both servers to be configured on the IP address ``192.168.12.123``. GA4GH and Keycloak need to know each other's IP addresses in order for the authentication protocols to work. 
 
@@ -403,19 +404,19 @@ You can also change the ip ports that the Keycloak and GA4GH servers listen on i
 
 ::
 
-    candigDeploy -kip 127.123.45.678 deploy
+    $ candigDeploy -kip 127.123.45.678
 
 This causes Keycloak to be assigned the IP address ``127.123.45.678``. For GA4GH, we can assign an IP ``192.168.00.100``:
 
 ::
 
-    candigDeploy -gip 192.168.00.100 deploy
+    $ candigDeploy -gip 192.168.00.100
 
 We can also combine these arguments:
 
 ::
 
-    candigDeploy -kip 172.101.42.101 -gip 172.404.82.404 deploy
+    $ candigDeploy -kip 172.101.42.101 -gip 172.404.82.404
 
 Which will set keycloak to listen on IP ``172.101.42.101`` and GA4GH to listen on IP ``172.404.82.404``.
 
@@ -426,7 +427,7 @@ To set keycloak to listen to a different port, use the ``--keycloak-port`` optio
 
 ::
 
-    candigDeploy -kp 1234 deploy
+    $ candigDeploy -kp 1234
 
 This will cause Keycloak to listen on port ``1234`` of its IP address.
 
@@ -434,7 +435,7 @@ Similarly, use the ``--ga4gh-port`` option to set GA4GH's port number. Keycloak 
 
 ::
 
-    candigDeploy -gp 5678 deploy
+    $ candigDeploy -gp 5678
 
 GA4GH will then listen on port number ``5678``.
 
@@ -442,7 +443,7 @@ In analogy with setting separate IPs, we may combine these options to set differ
 
 ::
 
-    candigDeploy -kp 7345 -gp 1984 deploy
+    $ candigDeploy -kp 7345 -gp 1984
 
 Which will set Keycloak to listen on port ``7345`` and GA4GH to listen on port ``1984``.
 
@@ -461,7 +462,7 @@ To deploy the GA4GH server with additional data from the 1000 Genomes data set:
 
 ::
 
-    candigDeploy -ed deploy
+    $ candigDeploy -ed
 
 Deploying the additional data will take significantly longer than otherwise.
 
@@ -474,7 +475,7 @@ To deploy a Docker container that holds a Keycloak-authenticated funnel server:
 
 ::
 
-    candigDeploy -f deploy
+    $ candigDeploy -f
 
 The funnel server is accessible at port ``3002`` on the IP ``127.0.0.1``.
 
@@ -482,7 +483,7 @@ As with Keycloak and GA4GH server, the funnel server can be parameterized in ter
 
 ::
 
-    candigDeploy -f -fip 192.168.00.100 -fp 9090 deploy
+    $ candigDeploy -f -fip 192.168.00.100 -fp 9090 
 
 The client application to funnel currently only supports a single test job that repeated prints the date.
 
@@ -491,7 +492,7 @@ The client application to funnel currently only supports a single test job that 
 
 ::
 
-    candigDeploy -t deploy
+    $ candigDeploy -t
 
 This will deploy the token tracer program alongside the Keycloak server.
 
@@ -505,7 +506,7 @@ The GA4GH and Keycloak servers may be deployed via Vagrant. This deployment assu
 
 ::
 
-    candigDeploy -v -vip 192.168.99.100 deploy
+    $ candigDeploy -v -vip 192.168.99.100
 
 This will deploy the servers with the IP configured to ``192.168.99.100`` on default ports for both servers.
 Other command-line options are not supported with Vagrant deployment.

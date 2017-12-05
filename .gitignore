@@ -1,0 +1,4 @@
+*.pyc
+deployer/ga4gh/ga4gh-server
+*.bak
+*.vagrant

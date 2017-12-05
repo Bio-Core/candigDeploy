@@ -22,6 +22,7 @@ setup(name="candigDeploy",
                   "Topic :: Utilities"],
       keywords="utility command-line candig deploy deployment deployer ga4gh keycloak funnel authentication server setup",
       packages=find_packages(exclude=['docs', 'tests']),
+      install_requires=["PyYAML"],
       python_requires=">=2.7",
       include_package_data=True,
       entry_points = {
