@@ -1,16 +1,24 @@
-
 import subprocess
 import pkg_resources
+import json
 
 class funnel:
 
     def __init__(self):
-
+        """
+        Constructor for the funnel deployer
+        """
         self.pkgName = __name__
-        self.funnelPath = '/'.join(('.', 'funnel'))
+        self.funnelPath = '/'.join(('.'))
+
+    def route(self, args):
+        # deploy funnel if selected
+        if args.funnel:
+            self.config(args)
+            self.deploy(args.funnelImageName, args.funnelContainerName, args.funnelPort)
 
 
-    def funnelDeploy(self, funnelImageName, funnelContainerName, funnelPort):
+    def deploy(self, funnelImageName, funnelContainerName, funnelPort):
         """
         Deploy the funnel server via docker
 
@@ -23,7 +31,6 @@ class funnel:
 
         Returns: None
         """
-
         funnelDir = pkg_resources.resource_filename(self.pkgName, self.funnelPath)
         build = ["docker", "build", "-t", funnelImageName, funnelDir]
         subprocess.call(build)
@@ -35,14 +42,14 @@ class funnel:
 
 
 
-    def funnelConfig(self, args):
+    def config(self, args):
         """
         Writes the keycloak.json file for the funnel client
 
         Parameters:
 
         argsObject args - An object containing the command-line arguments as attributes
-        string funnelDir - The absolute path of the deployer's funnel files directory
+        string funnelDir - The absolute path of the deployed funnel files directory
 
         Returns: None
         """

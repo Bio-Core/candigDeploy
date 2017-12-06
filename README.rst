@@ -1,5 +1,5 @@
 =====================================================
-CanDIG GA4GH and Keycloak Server Deployment Script
+CanDIG Deployment Package
 =====================================================
 
 1.1 Overview:
@@ -8,7 +8,7 @@ CanDIG GA4GH and Keycloak Server Deployment Script
 This script deploys application servers for the CanDIG project:
 
 1. Keycloak authentication server 
-2. Authorization branch CanDIG GA4GH application server
+2. Authentication branch CanDIG GA4GH application server
 
 The deployment can be faciliated either through Docker, Singularity, or Vagrant.
 
@@ -36,11 +36,14 @@ https://github.com/Bio-Core/candigDeploy
 - Python 2.7+
 - pip
 - PyYAML
+- gunzip (for Singularity)
 
-Note that Singularity will NOT work on MacOS, and hence requires the Vagrant deployment to use Singularity. 
+Singularity cannot be used on a MacOS. Use either VirtualBox with a guest Linux operating system or the Vagrant deployment option to deploy via singularity in this case.
 
 Docker or Vagrant may need a hypervisor such as VirtualBox in order to work.
 
+This script requires root permissions for Docker and Vagrant deployment options. 
+For non-root use, follow the non-root installation instructions and use a Singularity deployment.
 
 1.3 Installation
 --------------------

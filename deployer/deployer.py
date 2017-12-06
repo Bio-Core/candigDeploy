@@ -16,15 +16,20 @@ import ga4gh.ga4gh as ga4gh
 
 
 class deployer:
+    """
+    The deployer class manages the control flow and 
+    passing of arguments for the deployment 
+    sequence of the CanDIG project.
+    """
 
     def __init__(self):
         """
         Constructor for the deployer class
         
         Initializes attributes for the deployer class
-            including default filepaths
+        including default filepaths
         Starts the command-line argument parser
-            and configures attributes and arguments accordingly 
+        and configures attributes and arguments accordingly 
         Passes control to the deployment router method
 
         Parameters: None
@@ -34,9 +39,12 @@ class deployer:
 
         dataArg = "default"
 
-        self.pkgName = __name__
-        self.vagrantPath = '/'.join(('.', 'vagrant'))
+        # set the pathing names
+        pkgName = __name__
+        vagrantPath = '/'.join(('.', 'vagrant'))
+        self.vagrantDir = pkg_resources.resource_filename(pkgName, vagrantPath)
 
+        # initialize the objects composed with the deployer
         self.keycloak = keycloak.keycloak()
         self.ga4gh = ga4gh.ga4gh()
         self.cmdparse = cmdparse.cmdparse()
@@ -55,15 +63,20 @@ class deployer:
         elif postArgs.extraData:
             dataArg = "extra"
 
-        # initiate the deployment procedure if deploy has been specified
+        # initiate the deployment procedure 
+        self.routeDeploy(postArgs, dataArg)
 
-        self.deploymentRouter(postArgs, dataArg)
+        # print deployment information
         self.printDeploy(postArgs)
 
         exit()
 
 
     def argsPostProcess(self, args):
+        """
+        Post-process the arguments with additional logic
+        based on the command-line arguments themselves
+        """
         if args.vagrant:
             args.keycloakIP = args.ga4ghIP = args.vagrantIP
 
@@ -73,7 +86,8 @@ class deployer:
 
         return args
 
-    def deploymentRouter(self, args, dataArg):
+
+    def routeDeploy(self, args, dataArg):
         """
         Chooses which deployment scheme to use based on the arguments provided
 
@@ -101,33 +115,16 @@ class deployer:
 
         # remove duplicate containers
         self.containerTeardown(args.keycloakContainerName, args.ga4ghContainerName, args.funnelContainerName)
-        # configure the keycloak server
-        self.keycloak.keycloakConfig(args)
 
-        # choose between docker and singularity keycloak deployment
-        if ((not args.vagrant) and (not args.singularity)):
-            self.keycloak.keycloakDeploy(args)
-        elif args.singularity:
-            self.keycloak.singularityKeycloakDeploy(args)
-
-        # initialize the repository containing the ga4gh source code locally if unspecified
-        if args.ga4ghSrc == "ga4gh-server":   
-            self.ga4gh.initSrc(args)
-
-        # choose between vagrant deployment or singularity or docker deployment of ga4gh server 
         if args.vagrant:
             self.vagrant.vagrantDeploy(args)
-        elif args.singularity:
-            self.ga4gh.singularityGa4ghDeploy(args)
-        elif (not args.noGa4gh):
-            self.ga4gh.ga4ghDeploy(args.ga4ghImageName, args.ga4ghContainerName, args.ga4ghPort,\
-                        args.ga4ghSrc, dataArg)
-
-        # deploy funnel if selected
-        if args.funnel:
-            self.funnel.funnelConfig(args)
-            self.funnel.funnelDeploy(args.funnelImageName, args.funnelContainerName, args.funnelPort)
-
+        else:
+            # deploy keycloak
+            self.keycloak.route(args)
+            # deploy ga4gh
+            self.ga4gh.route(args, dataArg)
+            # deploy funnel
+            self.funnel.route(args)
 
 
     def containerTeardown(self, keycloakContainerName, ga4ghContainerName, funnelContainerName):
@@ -148,12 +145,11 @@ class deployer:
 
         Returns: None
         """
-        vagrantDir = pkg_resources.resource_filename(self.pkgName, self.vagrantPath)
 
         try:
             subprocess.call(["docker", "container", "kill", keycloakContainerName, ga4ghContainerName, funnelContainerName])
             subprocess.call(["docker", "container", "rm", keycloakContainerName, ga4ghContainerName, funnelContainerName])
-            subprocess.call(["vagrant", "destroy", "-f", "default"], cwd=vagrantDir)
+            subprocess.call(["vagrant", "destroy", "-f", "default"], cwd=self.vagrantDir)
         except OSError:
             return
         
@@ -183,17 +179,19 @@ class deployer:
             print("CONTAINER: " + args.ga4ghContainerName)
 
         print("IP:PORT:   " + args.ga4ghIP + ":" + args.ga4ghPort)
+
+        if args.funnel:
+            print("\nFunnel is accessible at:")
+            print("IMAGE:     " + args.funnelImageName)
+            print("CONTAINER: " + args.funnelContainerName)
+            print("IP:PORT:   " + args.funnelIP + ":" + args.funnelPort)     
+
         print("\nUser Account:")
         print("USERNAME:  " + args.userUsername)
         print("PASSWORD:  " + args.userPassword)
         print("\nAdmin Account:")
         print("USERNAME:  " + args.adminUsername)
         print("PASSWORD:  " + args.adminPassword + "\n")
-        if args.funnel:
-            print("\nFunnel is accessible at:")
-            print("IMAGE:     " + args.funnelImageName)
-            print("CONTAINER: " + args.funnelContainerName)
-            print("IP:PORT:   " + args.funnelIP + ":" + args.funnelPort)     
 
 
 def main():

@@ -12,7 +12,21 @@ class ga4gh:
         self.pkgName = __name__
         self.ga4ghPath = '/'.join(('.'))
 
-    def ga4ghDeploy(self, ga4ghImageName, ga4ghContainerName, ga4ghPort, ga4ghSrc, dataArg):
+
+    def route(self, args, dataArg):
+
+        # initialize the repository containing the ga4gh source code locally if unspecified
+        self.initSrc(args)
+
+        # choose between vagrant deployment or singularity or docker deployment of ga4gh server 
+        if args.singularity:
+            self.deploySingularity(args)
+        elif not args.noGa4gh:
+            self.deployDocker(args.ga4ghImageName, args.ga4ghContainerName,\
+                             args.ga4ghPort, args.ga4ghSrc, dataArg)
+
+
+    def deployDocker(self, ga4ghImageName, ga4ghContainerName, ga4ghPort, ga4ghSrc, dataArg):
         """
         Deploys the ga4gh server
 
@@ -42,25 +56,19 @@ class ga4gh:
         subprocess.Popen(run)
 
 
-
-
-    def ga4ghBaseConfig(self):
+    def configSingularity(self):
         """
         Sets the location of the client_secrets JSON file
         in the configuration
         """
         configPath = '/'.join(('.', 'config', 'oidc_config.yml'))
         configFile = pkg_resources.resource_filename(self.pkgName, configPath)
-        
 
         clientSecretPath = '/'.join(('.', 'config', 'client_secrets.json'))
         clientSecretFile = pkg_resources.resource_filename(self.pkgName, clientSecretPath)
 
-        print(configFile)
         fileHandle = open(configFile)
         yamlData = yaml.load(fileHandle)   
-        print(yamlData)
-        print(yamlData['OIDC_CLIENT_SECRETS'])
         yamlData['OIDC_CLIENT_SECRETS'] = clientSecretFile
         fileHandle.close()
         fileHandle = open(configFile, "w")
@@ -68,8 +76,7 @@ class ga4gh:
         fileHandle.close()
 
 
-
-    def singularityGa4ghDeploy(self, args):
+    def deploySingularity(self, args):
         """
         Deploy ga4gh server via a singularity container
 
@@ -81,7 +88,6 @@ class ga4gh:
 
         Returns: None
         """
-
         imgPath = '/'.join(('.', 'ga4gh.simg'))
         imgName = pkg_resources.resource_filename(self.pkgName, imgPath)
         duplicateImg = pkg_resources.resource_exists(self.pkgName, imgPath)
@@ -91,14 +97,13 @@ class ga4gh:
 
         subprocess.call(["singularity", "pull", "--name", imgName, "shub://DaleDupont/singularity-ga4gh:latest"])
 
-        self.ga4ghBaseConfig()
+        self.configSingularity()
 
         configPath = '/'.join(('.', 'config', 'oidc_config.yml'))
         configFile = pkg_resources.resource_filename(self.pkgName, configPath)
 
         # set the environment variables to use
         # inside the singularity container
-
         envList = [("SINGULARITYENV_GA4GH_PORT", args.ga4ghPort), 
                    ("SINGULARITYENV_GA4GH_IP", args.ga4ghIP), 
                    ("SINGULARITYENV_GA4GH_CONFIG", configFile)]
@@ -109,9 +114,7 @@ class ga4gh:
         subprocess.Popen(["singularity", "run", imgName])
 
 
-
-
-    def ga4ghConfig(self, ga4ghSourceDir, args):
+    def config(self, ga4ghSourceDir, args):
         """ 
         Writes the new client_secrets.json file 
 
@@ -124,7 +127,6 @@ class ga4gh:
 
         Returns: None
         """
-
         clientSecretPath = '/'.join(('.', 'config', 'client_secrets.json'))
         clientSecretFile = pkg_resources.resource_filename(self.pkgName, clientSecretPath)
 
@@ -151,8 +153,6 @@ class ga4gh:
         # copy to the reference directory
         copyFile = ga4ghSourceDir + "/ga4gh/server/frontend/config/client_secrets.json"
         shutil.copy(clientSecretFile, copyFile)
-
-
 
 
     def initSrc(self, args):
@@ -192,13 +192,12 @@ class ga4gh:
                 ga4ghDir = pkg_resources.resource_filename(self.pkgName, self.ga4ghPath)
                 shutil.copyfile(ga4ghDir + ifile, srcPath + fileDict[ifile])
 
-            self.ga4ghConfig(srcPath, args)
-
-        # reconfigure the client_secrets.json only
+            self.config(srcPath, args)
         elif (not args.noConfig):
+            # reconfigure the client_secrets.json only
             clientSecretFile = srcPath + '/ga4gh/server/frontend/config/client_secrets.json'
             os.remove(clientSecretFile)
-            self.ga4ghConfig(srcPath, args)
+            self.config(srcPath, args)
         else:
             print("Using existing source directory and configuration " + srcPath)
             print("Command line configuration options for GA4GH will not be used")
