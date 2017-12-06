@@ -16,10 +16,8 @@ FROM ubuntu
 # This Dockerfile has been modified for the CanDIG project
 
 # the source directory on which the ga4gh code resides
-ARG sourceDir="ga4gh-server"
 ARG dataArg="default"
-ENV sourceDir $sourceDir
-ENV dataArg   $dataArg
+ENV dataArg $dataArg
 
 # Update the sources list
 RUN apt-get update  --fix-missing

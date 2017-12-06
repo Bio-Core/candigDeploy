@@ -192,8 +192,6 @@ The command-line options can modify the following variables:
 +-------------------------+------------+-------------------------------+----------------------------------------------------------------------------------------------------+   
 | override                | o          | False                         | Overrides the target source directory for ga4gh  with a clean repository pulled from github        |
 +-------------------------+------------+-------------------------------+----------------------------------------------------------------------------------------------------+
-| ga4ghSrc                | gs         | ./deployer/ga4gh/ga4gh-server | The location of the source directory to use for ga4gh                                              |
-+-------------------------+------------+-------------------------------+----------------------------------------------------------------------------------------------------+
 | singularity             | s          | False                         | Deploys GA4GH and Keycloak servers on Singularity                                                  |
 +-------------------------+------------+-------------------------------+----------------------------------------------------------------------------------------------------+
 | token-tracer            | t          | False                         | Deploys the token tracer on the Keycloak server container (Docker only)                            |
@@ -322,25 +320,29 @@ However, the Singularity deployment does not currently work with ``--realm-name`
 1.6.3 Example 3: Deployment on a different IP address
 ===========================================================
 
-To deploy Keycloak and GA4GH server with different IP addresses use the ``--ip`` option. This will change both the Keycloak and GA4GH server IPs. The override option is needed to overwrite any existing configuration files set to a different IP for GA4GH.
+To deploy Keycloak and GA4GH server with a different IP address use the ``--ip`` option. This will change both the Keycloak and GA4GH server IPs to the IP given:
 
 ::
 
     $ candigDeploy -i 192.168.12.123
 
-This will cause both servers to be configured on the IP address ``192.168.12.123``. GA4GH and Keycloak need to know each other's IP addresses in order for the authentication protocols to work. 
+This will cause both servers to be configured on the IP address ``192.168.12.123``. 
 
-You can also change the ip ports that the Keycloak and GA4GH servers listen on individually through the ``--keycloak-ip`` and ``--ga4gh-ip`` options. These will be overrided by the ``--ip`` option if it is used.
+You can also change the IP addresses of Keycloak and GA4GH separately through the ``--keycloak-ip`` and ``--ga4gh-ip`` options. This allows the servers to listen on different IP addresses. These will be overrided by the ``--ip`` option if it is used.
 
 ::
 
     $ candigDeploy -kip 127.123.45.678
 
-This causes Keycloak to be assigned the IP address ``127.123.45.678``. For GA4GH, we can assign an IP ``192.168.00.100``:
+This causes Keycloak to be assigned the IP address ``127.123.45.678``. GA4GH will still listen on the default ``127.0.0.1``. 
+
+For GA4GH, we can assign an IP ``192.168.00.100``:
 
 ::
 
     $ candigDeploy -gip 192.168.00.100
+
+Keycloak will then listen to the default ``127.0.0.1`` address.
 
 We can also combine these arguments:
 
@@ -353,7 +355,7 @@ Which will set keycloak to listen on IP ``172.101.42.101`` and GA4GH to listen o
 1.6.4 Example 4: Deploy on different ports:
 ===========================================================
 
-To set keycloak to listen to a different port, use the ``--keycloak-port`` option. GA4GH will be automatically configured to communicate with Keycloak using the new port number:
+To set Keycloak to listen to a different port, use the ``--keycloak-port`` option. GA4GH will be automatically configured to communicate with Keycloak using the new port number:
 
 ::
 
@@ -381,7 +383,7 @@ Which will set Keycloak to listen on port ``7345`` and GA4GH to listen on port `
 1.6.5 Example 5: Reverting the Source Configuration
 ===========================================================
 
-To revert the GA4GH source to its original version, (found in ``/ga4gh/ga4gh-server`` by default), use the ``--override`` option in the deployment. 
+To revert the GA4GH source to its original version, (found in ``deployer/ga4gh/ga4gh-server`` by default), use the ``--override`` option in the deployment. 
 This will overwrite an existing changes that you have made to development.
 This is largerly used for testing purposes to test installations from scratch.
 End-users typically will not need to use this option.

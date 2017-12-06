@@ -23,10 +23,10 @@ class ga4gh:
             self.deploySingularity(args)
         elif not args.noGa4gh:
             self.deployDocker(args.ga4ghImageName, args.ga4ghContainerName,\
-                             args.ga4ghPort, args.ga4ghSrc, dataArg)
+                             args.ga4ghPort, dataArg)
 
 
-    def deployDocker(self, ga4ghImageName, ga4ghContainerName, ga4ghPort, ga4ghSrc, dataArg):
+    def deployDocker(self, ga4ghImageName, ga4ghContainerName, ga4ghPort, dataArg):
         """
         Deploys the ga4gh server
 
@@ -38,18 +38,16 @@ class ga4gh:
         string ga4ghContainerName -
         string ga4ghDir - 
         string ga4ghPort - 
-        string ga4ghSrc - 
         string dataArg -
 
         Returns: None
         """
 
         # build the ga4gh server
-        srcArg = "sourceDir=" + ga4ghSrc
         dataArg = "dataArg=" + dataArg
 
         ga4ghDir = pkg_resources.resource_filename(self.pkgName, self.ga4ghPath)
-        build = ["docker",  "build", "-t", ga4ghImageName, "--build-arg", srcArg, "--build-arg", dataArg, ga4ghDir]
+        build = ["docker",  "build", "-t", ga4ghImageName, "--build-arg", dataArg, ga4ghDir]
         subprocess.call(build)
         # run the ga4gh server
         run = ["docker", "run", "-p", ga4ghPort + ":8000", "--name", ga4ghContainerName, ga4ghImageName]
