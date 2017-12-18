@@ -19,12 +19,16 @@ their respective Dockerfiles found in ``deployer/ga4gh/Dockerfile`` and
 The GA4GH Singularity container may be pulled from
 Singularity Hub using Singularity:
 
-``singularity pull shub://DaleDupont/Singularity-GA4GH``
+::
+
+    singularity pull shub://DaleDupont/Singularity-GA4GH
 
 The Keycloak Singularity container must be downloaded from the release
 on its dedicated GitHub Repository:
 
-``https://github.com/DaleDupont/Singularity-Keycloak/releases/0.0.1.git``
+::
+
+    https://github.com/DaleDupont/Singularity-Keycloak/releases/0.0.1.git
 
 This container cannot be built using standard methods nor uploaded
 to Singulartiy Hub. It must be built and run as a ``--writable`` image.

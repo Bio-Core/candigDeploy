@@ -6,16 +6,33 @@ import json
 import gzip
 
 class keycloak:
+    """
+    Subdeployer for the Keycloak server
 
+    Deploys keycloak either via Docker or Singularity
+    based on the command-line arguments
+
+                              +--> deployDocker
+    args                      |
+    --> route --> config --> XOR
+                              |
+                              +--> deploySingularity
+    """
     def __init__(self):
-
+        """
+        Constructor for the keycloak subdeployer
+        """
+        # get the location of the keycloak directory
         self.pkgName = __name__
         self.keycloakPath = '/'.join(('.'))
+        self.keycloakDir = pkg_resources.resource_filename(self.pkgName, self.keycloakPath)
 
 
     def route(self, args):
         """
         Configure and initiate Keycloak's deployment
+
+        Entrypoint method for the Keycloak subdeployer
 
         Parameters:
 
@@ -42,12 +59,13 @@ class keycloak:
 
         Parameters:
 
-        string keycloakDir - The path of the directory which contains the Keycloak server images
-        argsObject args - The object containing the command line arguments as attributes
+        argsObject args - The object containing the command-line 
+                          arguments as attributes
 
         Returns: None
         """
 
+        # prepare the build arguments to the Keycloak Docker container
         tokenArg = "tokenTracer=" + str(args.tokenTracer)
         realmArg = "realmName=" + args.realmName
         adminNameArg = "adminUsername=" + args.adminUsername
@@ -55,13 +73,11 @@ class keycloak:
         userNameArg = "userUsername=" + args.userUsername
         userPwdArg = "userPassword=" + args.userPassword
   
-        keycloakDir = pkg_resources.resource_filename(self.pkgName, self.keycloakPath)
-
-        keyProc = ["docker", "build", "-t", args.keycloakImageName, \
-                   "--build-arg", tokenArg, "--build-arg", realmArg, \
-                   "--build-arg", adminNameArg, "--build-arg", adminPwdArg, \
-                   "--build-arg", userNameArg, "--build-arg", \
-                   userPwdArg, keycloakDir]
+        keyProc = ["docker", "build", "-t", args.keycloakImageName,
+                   "--build-arg", tokenArg, "--build-arg", realmArg,
+                   "--build-arg", adminNameArg, "--build-arg", adminPwdArg,
+                   "--build-arg", userNameArg, "--build-arg",
+                   userPwdArg, self.keycloakDir]
 
         buildKeycloakCode = subprocess.call(keyProc)
 
@@ -71,12 +87,14 @@ class keycloak:
             print("ERROR: Docker build has failed to build image.")
             exit(1)
 
-        # we need to capture port errors!
+        # we need to capture port errors
         # without interrupting the server
         # run the keycloak server as a background process
         if args.tokenTracer:
-            # net_raw and net_admin are necesary to have the network privileges to packet capture
-            subprocess.Popen(["docker", "run", "--cap-add", "net_raw", "--cap-add", "net_admin", "-p", \
+            # net_raw and net_admin are necesary 
+            # to have the network privileges to packet capture
+            # this is for tokenTracer support
+            subprocess.Popen(["docker", "run", "--cap-add", "net_raw", "--cap-add", "net_admin", "-p",
                               args.keycloakPort + ":8080", "--name", args.keycloakContainerName, args.keycloakImageName])
         else:
             subprocess.Popen(["docker", "run", "-p", args.keycloakPort + ":8080", "--name", args.keycloakContainerName, args.keycloakImageName])
@@ -92,28 +110,24 @@ class keycloak:
 
         Returns: None
         """        
-
-        imgPath = '/'.join(('.', 'key.img'))
-        imgName = pkg_resources.resource_filename(self.pkgName, imgPath)
-
-        duplicateImg = pkg_resources.resource_exists(self.pkgName, imgPath)
-
-        if duplicateImg:
-           os.remove(imgName)
-
-        zipPath = '/'.join(('.', 'key.img.gz'))
-        zipName = pkg_resources.resource_filename(self.pkgName, zipPath)
-
-        duplicateZipImg = pkg_resources.resource_exists(self.pkgName, zipPath)
-
-        if duplicateZipImg:
-           os.remove(zipName)
-
-        keycloakDir = pkg_resources.resource_filename(self.pkgName, self.keycloakPath)
+        imgList = ["key.img", "key.img.gz"]
+        for img in imgList:
+            # get the location of the singularity image
+            imgPath = '/'.join(('.', img))
+            imgName = pkg_resources.resource_filename(self.pkgName, imgPath)
+            # check if the image already exists
+            duplicateImg = pkg_resources.resource_exists(self.pkgName, imgPath)
+            # remove the existing image if 
+            # the override argument is given
+            if duplicateImg:
+                os.remove(imgName)
 
         gitUrl = "https://github.com/DaleDupont/singularity-keycloak/releases/download/0.0.1/key.img.gz"
-        subprocess.call(["wget", gitUrl, "-P", keycloakDir])
+        subprocess.call(["wget", gitUrl, "-P", self.keycloakDir])
 
+
+        zipPath = '/'.join(('.', "key.img.gz"))
+        zipName = pkg_resources.resource_filename(self.pkgName, zipPath)
         subprocess.call(["gunzip", zipName])
 
         keycloakConfigPath = '/'.join(('.', 'keycloakConfig.json'))
@@ -134,6 +148,8 @@ class keycloak:
         for envVar in envList:
             os.environ[envVar[0]] = envVar[1]
 
+        imgPath = '/'.join(('.', 'key.img'))
+        imgName = pkg_resources.resource_filename(self.pkgName, imgPath)
         subprocess.Popen(["singularity", "run", "--writable", imgName])
 
 
@@ -147,12 +163,10 @@ class keycloak:
         Parameters:
 
         argsObject args - An object containing the command-line arguments as attributes
-        string keycloakDir - The absolute path of the deployer's keycloak files directory
 
         Returns: None
         """        
         keycloakConfigPath = '/'.join(('.', 'keycloakConfig.json'))
-        #keycloakConfigFile = keycloakDir + "/keycloakConfig.json"
         configPath = pkg_resources.resource_filename(self.pkgName, keycloakConfigPath)
 
         #configFile = pkg_resources.resource_stream(self.pkgName, keycloakConfigPath)
@@ -195,7 +209,5 @@ class keycloak:
             configData[0]["users"][0]["username"] = args.userUsername
             configData[1]["users"][0]["username"] = args.adminUsername
 
-
         with open(configPath, "w") as configFile:
             json.dump(configData, configFile, indent=1)
-

@@ -161,67 +161,65 @@ the ``-h`` or ``--help`` option:
 
 The command-line options can modify the following variables:
 
-+-------------------------+------------+-------------------------------+----------------------------------------------------------------------------------------------------+
-| Argument (Long Form)    | Short Form | Default                       | Description                                                                                        | 
-+=========================+============+===============================+====================================================================================================+
-| ip                      | i          | None                          | The IP to assign all servers to listen on. Overrides all other IP settings.                        |
-+-------------------------+------------+-------------------------------+----------------------------------------------------------------------------------------------------+
-| keycloak-ip             | kip        | 127.0.0.1                     | The IP of the Keycloak server to listen on.                                                        |
-+-------------------------+------------+-------------------------------+----------------------------------------------------------------------------------------------------+ 
-| ga4gh-ip                | gip        | 127.0.0.1                     | The IP of the GA4GH server to listen on.                                                           |
-+-------------------------+------------+-------------------------------+----------------------------------------------------------------------------------------------------+ 
-| keycloak-port           | kp         | 8080                          | The port number the Keycloak server listens on.                                                    |
-+-------------------------+------------+-------------------------------+----------------------------------------------------------------------------------------------------+
-| ga4gh-port              | gp         | 8000                          | The port number of the Ga4gh server listens on.                                                    |
-+-------------------------+------------+-------------------------------+----------------------------------------------------------------------------------------------------+
-| ga4gh-id                | gid        | ga4gh                         | The Keycloak client id of the GA4GH server with which it will register with Keycloak as a client   |
-+-------------------------+------------+-------------------------------+----------------------------------------------------------------------------------------------------+ 
-| realm-name              | r          | CanDIG                        | The name of the Keycloak realm on which the GA4GH server registers as a client                     |
-+-------------------------+------------+-------------------------------+----------------------------------------------------------------------------------------------------+ 
-| keycloak-image-name     | kin        | keycloak_candig               | The name to assign the resulting Docker image of the Keycloak server                               |
-+-------------------------+------------+-------------------------------+----------------------------------------------------------------------------------------------------+
-| keycloak-container-name | kcn        | keycloak_candig               | The name to assign the container running the Keycloak server image                                 |
-+-------------------------+------------+-------------------------------+----------------------------------------------------------------------------------------------------+
-| ga4gh-image-name        | gin        | ga4gh_candig                  | The name to assign the resulting Docker image of the GA4GH server                                  |
-+-------------------------+------------+-------------------------------+----------------------------------------------------------------------------------------------------+
-| ga4gh-container-name    | gcn        | ga4gh_candig                  | The name to assign the container running the GA4GH server image                                    |
-+-------------------------+------------+-------------------------------+----------------------------------------------------------------------------------------------------+
-| admin-username          | au         | admin                         | The username of the Keycloak administrator account                                                 |
-+-------------------------+------------+-------------------------------+----------------------------------------------------------------------------------------------------+
-| user-username           | uu         | user                          | The username of the user to login to the GA4GH server at the login page                            |
-+-------------------------+------------+-------------------------------+----------------------------------------------------------------------------------------------------+   
-| override                | o          | False                         | Overrides the target source directory for ga4gh  with a clean repository pulled from github        |
-+-------------------------+------------+-------------------------------+----------------------------------------------------------------------------------------------------+
-| singularity             | s          | False                         | Deploys GA4GH and Keycloak servers on Singularity                                                  |
-+-------------------------+------------+-------------------------------+----------------------------------------------------------------------------------------------------+
-| token-tracer            | t          | False                         | Deploys the token tracer on the Keycloak server container (Docker only)                            |
-+-------------------------+------------+-------------------------------+----------------------------------------------------------------------------------------------------+
-| funnel                  | f          | False                         | Deploys the funnel server in addition to GA4GH and keycloak (Docker only)                          |
-+-------------------------+------------+-------------------------------+----------------------------------------------------------------------------------------------------+
-| no-data                 | nd         | False                         | Deploys the GA4GH server with no data loaded (Docker only)                                         |
-+-------------------------+------------+-------------------------------+----------------------------------------------------------------------------------------------------+
-| extra-data              | ed         | False                         | Deploys the GA4GH server with additional 1000g data (Docker only)                                  |
-+-------------------------+------------+-------------------------------+----------------------------------------------------------------------------------------------------+
-| ga4gh-secret            | cs         | SEE CONFIGURATION             | The client secret for the GA4GH server                                                             |
-+-------------------------+------------+-------------------------------+----------------------------------------------------------------------------------------------------+
-| funnel-ip               | fip        | 127.0.0.1                     | The IP on which the funnel server is located                                                       |
-+-------------------------+------------+-------------------------------+----------------------------------------------------------------------------------------------------+
-| funnel-port             | fp         | 3002                          | The port number on which funnel listens                                                            |
-+-------------------------+------------+-------------------------------+----------------------------------------------------------------------------------------------------+
-| funnel-id               | fid        | funnel                        | The funnel client id for registration with Keycloak                                                |
-+-------------------------+------------+-------------------------------+----------------------------------------------------------------------------------------------------+
-| funnel-container-name   | fcn        | funnel_candig                 | The container name of the funnel Docker container                                                  |
-+-------------------------+------------+-------------------------------+----------------------------------------------------------------------------------------------------+
-| funnel-image-name       | fin        | funnel_candig                 | The tag of the funnel Docker image name                                                            |
-+-------------------------+------------+-------------------------------+----------------------------------------------------------------------------------------------------+
-| funnel-secret           | fs         | SEE CONFIGURATION             | The client secret for the funnel server                                                            |
-+-------------------------+------------+-------------------------------+----------------------------------------------------------------------------------------------------+
-| vagrant                 | v          | False                         | Deploys a Vagrant container linked to the deployer on which Singularity containers may be deployed |
-+-------------------------+------------+-------------------------------+----------------------------------------------------------------------------------------------------+
-| vagrant-ip              | vip        | 127.0.0.1                     | The IP address of the Vagrant container                                                            | 
-+-------------------------+------------+-------------------------------+----------------------------------------------------------------------------------------------------+
-
-As by convention, long form arguments are given with the double hyphen prefix "--" and short form arguments are given a single hyphen "-", as seen in the examples. 
++---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
+| Argument (Long Form)      | Short Form  | Default                       | Description                                                                                        | 
++===========================+=============+===============================+====================================================================================================+
+| --ip                      | -i          | None                          | The IP to assign all servers to listen on. Overrides all other IP settings.                        |
++---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
+| --singularity             | -s          | False                         | Deploys GA4GH and Keycloak servers on Singularity                                                  |
++---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
+| --ga4gh-ip                | -gip        | 127.0.0.1                     | The IP of the GA4GH server to listen on.                                                           |
++---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+ 
+| --ga4gh-port              | -gp         | 8000                          | The port number of the Ga4gh server listens on.                                                    |
++---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
+| --ga4gh-id                | -gid        | ga4gh                         | The Keycloak client id of the GA4GH server with which it will register with Keycloak as a client   |
++---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+ 
+| --ga4gh-image-name        | -gin        | ga4gh_candig                  | The name to assign the resulting Docker image of the GA4GH server                                  |
++---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
+| --ga4gh-container-name    | -gcn        | ga4gh_candig                  | The name to assign the container running the GA4GH server image                                    |
++---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
+| --ga4gh-secret            | -gs         | SEE CONFIGURATION             | The client secret for the GA4GH server                                                             |
++---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
+| --no-data                 | -nd         | False                         | Deploys the GA4GH server with no data loaded (Docker only)                                         |
++---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
+| --extra-data              | -ed         | False                         | Deploys the GA4GH server with additional 1000g data (Docker only)                                  |
++---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
+| --override                | -o          | False                         | Overrides the target source directory for ga4gh  with a clean repository pulled from github        |
++---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
+| --keycloak-port           | -kp         | 8080                          | The port number the Keycloak server listens on.                                                    |
++---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
+| --keycloak-ip             | -kip        | 127.0.0.1                     | The IP of the Keycloak server to listen on.                                                        |
++---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+ 
+| --keycloak-image-name     | -kin        | keycloak_candig               | The name to assign the resulting Docker image of the Keycloak server                               |
++---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
+| --keycloak-container-name | -kcn        | keycloak_candig               | The name to assign the container running the Keycloak server image                                 |
++---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
+| --admin-username          | -au         | admin                         | The username of the Keycloak administrator account                                                 |
++---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
+| --user-username           | -uu         | user                          | The username of the user to login to the GA4GH server at the login page                            |
++---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+   
+| --realm-name              | -r          | CanDIG                        | The name of the Keycloak realm on which the GA4GH server registers as a client                     |
++---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+ 
+| --token-tracer            | -t          | False                         | Deploys the token tracer on the Keycloak server container (Docker only)                            |
++---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
+| --funnel                  | -f          | False                         | Deploys the funnel server in addition to GA4GH and keycloak (Docker only)                          |
++---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
+| --funnel-ip               | -fip        | 127.0.0.1                     | The IP on which the funnel server is located                                                       |
++---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
+| --funnel-port             | -fp         | 3002                          | The port number on which funnel listens                                                            |
++---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
+| --funnel-id               | -fid        | funnel                        | The funnel client id for registration with Keycloak                                                |
++---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
+| --funnel-container-name   | -fcn        | funnel_candig                 | The container name of the funnel Docker container                                                  |
++---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
+| --funnel-image-name       | -fin        | funnel_candig                 | The tag of the funnel Docker image name                                                            |
++---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
+| --funnel-secret           | -fs         | SEE CONFIGURATION             | The client secret for the funnel server                                                            |
++---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
+| --vagrant                 | -v          | False                         | Deploys a Vagrant container linked to the deployer on which Singularity containers may be deployed |
++---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
+| --vagrant-ip              | -vip        | 127.0.0.1                     | The IP address of the Vagrant container                                                            | 
++---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
 
 1.5 Server Access and Login:
 -------------------------------
@@ -231,17 +229,17 @@ and the Keycloak server can be accessed at ``keycloak-ip:keycloak-port`` (defaul
 
 On the master realm on the administration console for Keycloak, the administration account can be accessed with the defaults:
 
-- username: admin
-- password: admin
+- username: ``admin``
+- password: ``admin``
 
 On the realmName realm (default: CanDIG), the user account can be accessed with the defaults:
 
-- username: user
-- password: user
+- username: ``user``
+- password: ``user``
 
 Note the interface on which the software containers may be accessed. You may list the interfaces using a tool such as ``ip`` (with ``ip addr``) or ``ifconfig``.
 If the software containers are running with a software hypervisor, such as VirtualBox, you may have to listen on the interface dedicated 
-to the virtual machine operating system, such as ``vboxnet0``, instead of listening locally on loopback with localhost. 
+to the virtual machine operating system, such as ``vboxnet0``, instead of listening locally on ``loopback`` with ``localhost``. 
 
 For instance, if you are running Docker using docker-machine with a software-based VirtualBox hypervisor, you can determine the IP address on which to set the deployment script using ``ip addr``:
 
@@ -262,7 +260,7 @@ For instance, if you are running Docker using docker-machine with a software-bas
 	      inet 192.168.12.1/12 brd 192.168.12.123 vboxnet0
 
 
-You would then set the deployer to configure GA4GH and Keycloak to listen on 192.168.12.1, the IP address found in the inet field for the vboxnet0 interface:
+You would then set the deployer to configure GA4GH and Keycloak to listen on ``192.168.12.1``, the IP address found in the ``inet`` field for the ``vboxnet0`` interface:
 
 ::
 
@@ -277,9 +275,9 @@ When deploying through VirtualBox or any software hypervisor, the ip addresses a
 
 The private IP address range is as follows:
 
-- ``192.168.0.0`` - ``192.168.255.255``
-- ``172.16.0.0`` - ``172.31.255.255``
-- ``10.0.0.0`` - ``10.255.255.255``
+- ``192.168.0.0 - 192.168.255.255``
+- ``172.16.0.0 - 172.31.255.255``
+- ``10.0.0.0 - 10.255.255.255``
 
 1.6 Examples
 -----------------
@@ -287,7 +285,7 @@ The private IP address range is as follows:
 1.6.1 Example 1: Keycloak and GA4GH Server Docker Deployment
 ===============================================================
 
-To deploy Keycloak and GA4GH on separate Docker containers on localhost, invoke the script with no arguments:
+To deploy Keycloak and GA4GH on separate Docker containers on ``localhost``, invoke the script with no arguments:
 
 ::
 
@@ -402,7 +400,7 @@ To deploy the GA4GH server with no data:
 
 ::
 
-    candigDeploy -nd deploy
+    $ candigDeploy -nd deploy
 
 To deploy the GA4GH server with additional data from the 1000 Genomes data set:
 
@@ -458,7 +456,7 @@ This will deploy the servers with the IP configured to ``192.168.99.100`` on def
 Other command-line options are not supported with Vagrant deployment.
 
 If the Vagrant containers fail to be removed, delete processes associated with Vagrant using ``ps -e`` and ``kill PID``. 
-You should look for processes under VBox, VBoxHeadless, ruby, or vagrant and delete those. 
+You should look for processes under ``VBox``, ``VBoxHeadless``, ``ruby``, or ``vagrant`` and delete those. 
 
 ::
 

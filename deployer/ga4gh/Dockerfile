@@ -15,7 +15,6 @@ FROM ubuntu
 
 # This Dockerfile has been modified for the CanDIG project
 
-# the source directory on which the ga4gh code resides
 ARG dataArg="default"
 ENV dataArg $dataArg
 

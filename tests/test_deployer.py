@@ -1,12 +1,19 @@
 import unittest
 
-from deployer.deployer import deployer
+from deployer.cmdparse import cmdparse
 
-class argParserTest(unittest.TestCase):
+class noArgsTest(unittest.TestCase):
+"""
+Tests for the command-line arguments
+"""
+
 
     def setUp(self):
-        self.deployer = deployer()
-        self.args = deployer.commandArgs(["deploy"])
+        """
+        Test a bare-bones deployment with no arguments
+        """
+        self.cmdparse = cmdparse()
+        self.args = cmdparse.commandArgs([""])
 
     def testDeploy(self):         
         assertTrue(self.args.deploy)
@@ -66,3 +73,20 @@ class argParserTest(unittest.TestCase):
 
 
 
+class ipTest(noArgsTest):
+"""
+Tests for setting the ip
+"""
+    def setUp(self):
+        """
+        Test a bare-bones deployment with no arguments
+        """
+        self.ip = "192.168.11.100"
+        self.cmdparse = cmdparse()
+        self.args = cmdparse.commandArgs(["-i " + self.ip])
+
+    def testKeycloakIP(self):
+        assertEqual(self.args.keycloakIP, self.ip)
+
+    def testGa4ghIP(self):
+        assertEqual(self.args.ga4ghIP, self.ip)
