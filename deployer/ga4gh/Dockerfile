@@ -15,9 +15,6 @@ FROM ubuntu
 
 # This Dockerfile has been modified for the CanDIG project
 
-ARG dataArg="default"
-ENV dataArg $dataArg
-
 # Update the sources list
 RUN apt-get update  --fix-missing
 
@@ -31,7 +28,6 @@ RUN apt-get install -y tar git curl libcurl4-openssl-dev wget dialog \
 RUN a2enmod wsgi
 
 # Create cache directories
-
 RUN mkdir /var/cache/apache2/python-egg-cache && \
     chown www-data:www-data /var/cache/apache2/python-egg-cache/
 
@@ -62,14 +58,15 @@ RUN a2dissite 000-default
 RUN a2ensite 001-ga4gh
 
 # Open port 8000 for apache server on which ga4gh runs
+# The port is modified by port-forwarding this container port
 EXPOSE 8000
 
-# Prepare container for deployment
+# download and load the compliance data onto the ga4gh server
+WORKDIR /srv/ga4gh-server/scripts
+RUN python prepare_compliance_data.py -o /srv/ga4gh-compliance-data
+
 # The directory that the user will land in when executing an interactive shell
 WORKDIR /srv/ga4gh-server
-
-# download and load the compliance data onto the ga4gh server
-RUN python dataPrep.py $dataArg
 
 # Default action: Bring up a webserver instance to run as a daemon
 CMD ["/usr/sbin/apache2ctl", "-D", "FOREGROUND"]

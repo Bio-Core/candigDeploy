@@ -48,19 +48,20 @@ class ga4gh:
     def route(self, args, dataArg):
 
         # initialize the ga4gh source code repository 
-        self.initSrc(args)
+        # self.initSrc(args)
 
         # deploy via singularity or docker
         # based on args
         if args.singularity:
             self.deploySingularity(args)
         elif not args.noGa4gh:
-            self.deployDocker(args.ga4ghImageName, 
-                              args.ga4ghContainerName,
-                              args.ga4ghPort, dataArg)
+            self.deployDockerHub(args.ga4ghContainerName, args.ga4ghPort)
+            # self.deployDocker(args.ga4ghImageName, 
+            #                  args.ga4ghContainerName,
+            #                  args.ga4ghPort)
 
 
-    def deployDocker(self, ga4ghImageName, ga4ghContainerName, ga4ghPort, dataArg):
+    def deployDocker(self, ga4ghImageName, ga4ghContainerName, ga4ghPort):
         """
         Deploys the ga4gh server
 
@@ -76,13 +77,8 @@ class ga4gh:
 
         Returns: None
         """
-
-        # prepare data argument for feeding into docker build
-        dataArg = "dataArg=" + dataArg
-
         # execute docker to build the ga4gh image
-        build = ["docker",  "build", "-t", ga4ghImageName, 
-                 "--build-arg", dataArg, self.ga4ghDir]
+        build = ["docker",  "build", "-t", ga4ghImageName, self.ga4ghDir]
         subprocess.call(build)
 
         # run the ga4gh server via a docker container
@@ -90,6 +86,37 @@ class ga4gh:
                "--name", ga4ghContainerName, ga4ghImageName]
         subprocess.Popen(run)
 
+    def deployDockerHub(self, ga4ghContainerName, ga4ghPort):
+        """
+        Pulls a pre-built ga4gh server image and runs as a Docker container
+
+        Copies configuration files onto the container and
+        configures ports before executing
+        """
+        # pull the ga4gh server image from the dalos repository
+        imageRepo = "dalos/docker-ga4gh"
+        pull = ["docker", "pull", imageRepo]
+        subprocess.call(pull)
+
+        # create the container
+        create = ["docker", "create", "-p", ga4ghPort + ":8000", 
+               "--name", ga4ghContainerName, imageRepo]
+        subprocess.call(create)
+
+        configDir = "/usr/local/lib/python2.7/dist-packages/ga4gh/server/config"
+
+        # copy the client secrets and config into the container
+        copyConfig = ["docker", "cp", self.oidcConfigName, 
+                      "{0}:{1}/oidc_config.yml".format(ga4ghContainerName, configDir)]
+        subprocess.call(copyConfig)
+
+        copySecrets = ["docker", "cp", self.secretLocalName, 
+                       "{0}:{1}/client_secrets.json".format(ga4ghContainerName, configDir)]
+        subprocess.call(copySecrets)
+
+        # start the container as a separate background process
+        start = ["docker", "start", ga4ghContainerName]
+        subprocess.Popen(start)
 
     def configSingularity(self):
         """
