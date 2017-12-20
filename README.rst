@@ -10,7 +10,7 @@ This script deploys application servers for the CanDIG project:
 1. Keycloak authentication server 
 2. Authentication branch CanDIG GA4GH application server
 
-The deployment can be faciliated either through Docker, Singularity, or Vagrant.
+The deployment can be faciliated either through Docker or Singularity.
 
 The servers are configured to be registered with one another and communicate with such that a user must authenticate with the GA4GH server through a login page using the username and password specified prior to using its REST API.
 
@@ -18,7 +18,6 @@ In each deployment, the Keycloak server is essential, as it provides login and a
 
 The deployer also supports:
 
-- The loading of test data onto the GA4GH server
 - Execution of a token tracer debugging program
 - Deployment of a Keycloak-authenticated Funnel application server
 
@@ -31,18 +30,18 @@ https://github.com/Bio-Core/candigDeploy
 ---------------------
 
 - Linux OR MacOS
-- Docker OR Vagrant OR Singularity
+- Docker OR Singularity
 - git
 - Python 2.7+
 - pip
 - PyYAML
 - gunzip (for Singularity)
 
-Singularity cannot be used on a MacOS. Use either VirtualBox with a guest Linux operating system or the Vagrant deployment option to deploy via singularity in this case.
+Singularity cannot be used on a MacOS. Use VirtualBox with a guest Linux operating system in this case.
 
-Docker or Vagrant may need a hypervisor such as VirtualBox in order to work.
+Docker may need a hypervisor such as VirtualBox in order to work.
 
-This script requires root permissions for Docker and Vagrant deployment options. 
+This script requires root permissions for Docker deployment. 
 For non-root use, follow the non-root installation instructions and use a Singularity deployment.
 
 1.3 Installation
@@ -180,10 +179,6 @@ The command-line options can modify the following variables:
 +---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
 | --ga4gh-secret            | -gs         | SEE CONFIGURATION             | The client secret for the GA4GH server                                                             |
 +---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
-| --no-data                 | -nd         | False                         | Deploys the GA4GH server with no data loaded (Docker only)                                         |
-+---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
-| --extra-data              | -ed         | False                         | Deploys the GA4GH server with additional 1000g data (Docker only)                                  |
-+---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
 | --override                | -o          | False                         | Overrides the target source directory for ga4gh  with a clean repository pulled from github        |
 +---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
 | --keycloak-port           | -kp         | 8080                          | The port number the Keycloak server listens on.                                                    |
@@ -215,10 +210,6 @@ The command-line options can modify the following variables:
 | --funnel-image-name       | -fin        | funnel_candig                 | The tag of the funnel Docker image name                                                            |
 +---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
 | --funnel-secret           | -fs         | SEE CONFIGURATION             | The client secret for the funnel server                                                            |
-+---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
-| --vagrant                 | -v          | False                         | Deploys a Vagrant container linked to the deployer on which Singularity containers may be deployed |
-+---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
-| --vagrant-ip              | -vip        | 127.0.0.1                     | The IP address of the Vagrant container                                                            | 
 +---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
 
 1.5 Server Access and Login:
@@ -271,7 +262,7 @@ The deployer program will create a source code directory for GA4GH if one does n
 1.5.1 Private IP Addresses
 ============================
 
-When deploying through VirtualBox or any software hypervisor, the ip addresses assigned as an interface must be within the private range of IP addresses. This is particularly relevant for Vagrant deployment if used with VirtualBox, where the vagrant IP address must be private. 
+When deploying through VirtualBox or any software hypervisor, the ip addresses assigned as an interface must be within the private range of IP addresses.
 
 The private IP address range is as follows:
 
@@ -391,28 +382,7 @@ End-users typically will not need to use this option.
     $ candigDeploy -o
 
 
-1.6.6 Example 6: Test Data Deployment
-===========================================================
-
-You can control how much data is preloaded onto the GA4GH server with the ``--no-data`` and ``--extra-data`` options. By default, a small minimal test data set is loaded onto the server. 
-
-To deploy the GA4GH server with no data:
-
-::
-
-    $ candigDeploy -nd deploy
-
-To deploy the GA4GH server with additional data from the 1000 Genomes data set:
-
-::
-
-    $ candigDeploy -ed
-
-Deploying the additional data will take significantly longer than otherwise.
-
-These options are mutually exclusive.
-
-1.6.7 Example 7: Funnel Deployment
+1.6.6 Example 6: Funnel Deployment
 ===========================================================
 
 To deploy a Docker container that holds a Keycloak-authenticated funnel server:
@@ -431,7 +401,7 @@ As with Keycloak and GA4GH server, the funnel server can be parameterized in ter
 
 The client application to funnel currently only supports a single test job that repeated prints the date.
 
-1.6.8. Example 8: Token Tracer Deployment
+1.6.7. Example 7: Token Tracer Deployment
 ===========================================================
 
 ::
@@ -440,26 +410,4 @@ The client application to funnel currently only supports a single test job that 
 
 This will deploy the token tracer program alongside the Keycloak server.
 
-The token tracer will print alongside the other server debugging statements to stdout as it recieves packets of interest. 
-
- 
-1.6.9 Example 9: Vagrant Deployment
-===========================================================
-
-The GA4GH and Keycloak servers may be deployed via Vagrant. This deployment assumes root-level privileges to work.
-
-::
-
-    $ candigDeploy -v -vip 192.168.99.100
-
-This will deploy the servers with the IP configured to ``192.168.99.100`` on default ports for both servers.
-Other command-line options are not supported with Vagrant deployment.
-
-If the Vagrant containers fail to be removed, delete processes associated with Vagrant using ``ps -e`` and ``kill PID``. 
-You should look for processes under ``VBox``, ``VBoxHeadless``, ``ruby``, or ``vagrant`` and delete those. 
-
-::
-
-    $ ps -e | egrep VBox
-    $ ps -e | egrep ruby 
-    $ ps -e | egrep vagrant
+The token tracer will print alongside the other server debugging statements to stdout as it recieves packets of interest.

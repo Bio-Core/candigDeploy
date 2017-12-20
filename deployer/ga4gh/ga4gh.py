@@ -45,7 +45,7 @@ class ga4gh:
         secretPath = "/ga4gh/server/config/client_secrets.json"
         self.secretSourceName = self.sourceName + secretPath
 
-    def route(self, args, dataArg):
+    def route(self, args):
 
         # initialize the ga4gh source code repository 
         # self.initSrc(args)
@@ -72,8 +72,6 @@ class ga4gh:
         string ga4ghImageName - Docker image name
         string ga4ghContainerName - Docker container name
         string ga4ghPort - Port number of the GA4GH server to listen on
-        string dataArg - Data deployment scheme for the GA4GH server
-                         One of: {"none", "default", "extra"}
 
         Returns: None
         """

@@ -39,10 +39,6 @@ Each of these also has several deployment schemes:
 
 1. Docker
 2. Singularity
-3. Vagrant
-
-Vagrant is largely used to faciliate testing of root-access 
-singularity deployments on MacOS systems.
 
 1.2 Class Structure
 --------------------------
@@ -115,18 +111,7 @@ One can test building from scratch using the ``--override`` option:
     $ python deployer.py -i 192.168.12.123 -o
 
 
-2.1.2 Vagrant Deployment
------------------------------
-
-This setup tests both the Vagrant deployment and Singularity
-
-::
-
-    $ python deployer.py -v -vip 192.168.12.123
-
-This should satisfy the requirements of the  base deployment.
-
-2.1.3 Funnel Deployment
+2.1.2 Funnel Deployment
 ------------------------------
 
 ::
@@ -141,7 +126,7 @@ One should satisfy the requirements of the base deployment and be able to access
 
 and submit a job successfully to funnel. An alpine container should appear in docker that is running the job.
 
-2.1.4 Server Configuration Testing
+2.1.3 Server Configuration Testing
 ----------------------------------------
 
 Test non-standard ports, usernames, and passwords to check that the Keycloak configuration with GA4GH is working:
@@ -157,7 +142,7 @@ The servers should behave as usual but instead use the following credentials on 
 
 The Keycloak server will then be accessible at ``192.168.12.123:9090`` and the GA4GH server will be accessible at ``192.168.12.123:9000``.
 
-2.1.5 Token Tracer Deployment
+2.1.4 Token Tracer Deployment
 ----------------------------------
 
 The token tracer may be tested with the ``--token-tracer`` option in standard deployment:

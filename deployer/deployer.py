@@ -10,10 +10,8 @@ import pkg_resources
 
 import cmdparse as cmdparse
 import funnel.funnel as funnel
-import vagrant.vagrant as vagrant
 import keycloak.keycloak as keycloak
 import ga4gh.ga4gh as ga4gh
-
 
 class deployer:
     """
@@ -54,33 +52,15 @@ class deployer:
 
         Returns: deployer
         """
-
-        # the dataArg is part of the old data deployment process
-        # this flag is used to decide
-        # which data deployment scheme to use:
-        # 1. default - deploy the compliance data
-        # 2. extra - deploy 1000g sample data (~2 GB)
-        # 3. none - deploy no data (empty registry)
-        dataArg = "default"
-
-        # set the pathing names
-        # this is used to locate vagrant
-        # and the vagrant deployment files
-        pkgName = __name__
-        vagrantPath = '/'.join(('.', 'vagrant'))
-        self.vagrantDir = pkg_resources.resource_filename(pkgName, vagrantPath)
-
         # initialize the objects composed with the deployer:
         # - keycloak 
         # - ga4gh
         # - cmdparse
         # - funnel 
-        # - vagrant
         self.keycloak = keycloak.keycloak()
         self.ga4gh = ga4gh.ga4gh()
         self.cmdparse = cmdparse.cmdparse()
         self.funnel = funnel.funnel()
-        self.vagrant = vagrant.vagrant()        
 
         # get the command line arguments
         args = self.cmdparse.commandParser(sys.argv[1:])
@@ -88,15 +68,8 @@ class deployer:
         # post-process the command-line arguments
         postArgs = self.argsPostProcess(args)
 
-        # set the dataArg based on whether more or no data
-        # for the ga4gh server was requested
-        if postArgs.noData:
-            dataArg = "none"
-        elif postArgs.extraData:
-            dataArg = "extra"
-
         # initiate the deployment procedure 
-        self.routeDeploy(postArgs, dataArg)
+        self.routeDeploy(postArgs)
 
         # print deployment information
         self.printDeploy(postArgs)
@@ -108,19 +81,15 @@ class deployer:
         Post-process the arguments with additional logic
         based on the command-line arguments themselves
         """
-        # override the keycloak and ga4gh IPs with the
-        # Vagrant IP if Vagrant is used
-        if args.vagrant:
-            args.keycloakIP = args.ga4ghIP = args.vagrantIP
-
-        # override the other ip addresses if ip is specified
+        # override the keycloak, ga4gh and funnel ip addresses 
+        # if ip is specified
         if args.ip:
             args.keycloakIP = args.ga4ghIP = args.funnelIP = args.ip
 
         return args
 
 
-    def routeDeploy(self, args, dataArg):
+    def routeDeploy(self, args):
         """
         Chooses which deployment scheme to use based on the arguments provided
 
@@ -137,27 +106,17 @@ class deployer:
         3. Funnel
            a. Docker
 
-        4. Vagrant
-           a. Keycloak via Singularity
-           b. GA4GH via Singularity
-
-        The GA4GH deployment is overidden by the Vagrant deployment if enabled.
-
         The router will also establish a GA4GH source code repoistory to push to containers if not available
         """
 
         # remove duplicate containers
         self.containerTeardown(args.keycloakContainerName, args.ga4ghContainerName, args.funnelContainerName)
 
-        # deploy Vagrant if chosen
-        # otherwise, deploy keycloak, ga4gh, and funnel 
+        # Deploy keycloak, ga4gh, and funnel 
         # sequentially based on the command-line arguments
-        if args.vagrant:
-            self.vagrant.vagrantDeploy(args) # deploy vagrant
-        else:
-            self.keycloak.route(args) # deploy keycloak
-            self.ga4gh.route(args, dataArg) # deploy ga4gh
-            self.funnel.route(args) # deploy funnel
+        self.keycloak.route(args) # deploy keycloak
+        self.ga4gh.route(args) # deploy ga4gh
+        self.funnel.route(args) # deploy funnel
 
 
     def containerTeardown(self, keycloakContainerName, ga4ghContainerName, funnelContainerName):
@@ -167,36 +126,28 @@ class deployer:
         Removes:
         1. Docker containers running Keycloak
         2. Docker containers running GA4GH 
-        3. Vagrant containers
 
         Parameters:
 
         string keycloakContainerName - The name of the Docker container which holds the Keycloak server
         string ga4ghContainerName - The name of the Docker container which holds the GA4GH server
-        string vagrantDir - The path of the directory which contains the Vagrantfile
         string funnelContainerName - The name of the Docker container which holds the Funnel server
 
         Returns: None
         """
-
         try:
             # kill running containers:
             subprocess.call(["docker", "container", "kill", 
                              keycloakContainerName, 
                              ga4ghContainerName, 
                              funnelContainerName])
-
             # remove stopped containers:
             subprocess.call(["docker", "container", "rm", 
                              keycloakContainerName, 
                              ga4ghContainerName, 
                              funnelContainerName])
-
-            # kill vagrant containers
-            subprocess.call(["vagrant", "destroy", "-f", "default"], 
-                            cwd=self.vagrantDir)
         except OSError:
-            return # abort the function if Docker or Vagrant not installed
+            return # abort the function if Docker not installed
         
 
     def printDeploy(self, args):

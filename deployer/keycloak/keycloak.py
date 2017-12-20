@@ -46,7 +46,7 @@ class keycloak:
         # choose between docker and singularity keycloak deployment
         if args.singularity:
             self.deploySingularity(args)
-        elif not args.vagrant:
+        else:
             # self.deployDocker(args)
             self.deployDockerHub(args)
 

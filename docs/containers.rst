@@ -7,7 +7,6 @@ There are five types of containers used in the deployment scheme:
 2. Keycloak Docker Container
 3. GA4GH Singularity Container
 4. Keycloak Singularity Container
-5. Deployer Vagrant Container
 
 1.0 Manual Acquisition and Construction
 -------------------------------------
@@ -51,9 +50,3 @@ on its dedicated GitHub Repository:
 
 This container cannot be built using standard methods nor uploaded
 to Singulartiy Hub. It must be built and run as a ``--writable`` image.
-
-1.3 Vagrant Container
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-The Vagrant container may be built using the Vagrantfile found
-in the ``vagrant`` directory of the deployer: ``deployer/vagrant/Vagrantfile``.

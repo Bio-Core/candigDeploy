@@ -1,4 +1,3 @@
-
 import argparse
 
 class cmdparse:
@@ -35,16 +34,12 @@ class cmdparse:
         argsObject - An object whose attribute names correspond to the argument fields
                      and whose values are the values supplied to the arguments (or default otherwise)
         """
-
         # initialize the command line arguments
         descLine = "Deployment script for CanDIG which deploys the GA4GH and Keycloak servers"
         parser = argparse.ArgumentParser(description=descLine, add_help=True)
 
-
         # having no data, additional data, or the default data are to be mutually exclusive
-        dataGroup    = parser.add_mutually_exclusive_group()
         rewriteGroup = parser.add_mutually_exclusive_group() 
-        deployGroup = parser.add_mutually_exclusive_group()
 
         localhost = "127.0.0.1"
         keycloakName = "keycloak_candig"
@@ -52,96 +47,90 @@ class cmdparse:
         funnelName = "funnel_candig"
 
         commandList = [ 
-            ("-i",   "--ip",                      
-             None,           "ip",                    
-             "store", "Set the ip address of both servers"),
-            ("-kip", "--keycloak-ip",             
-             localhost,      "keycloakIP",            
-             "store", "Set the ip address of the keycloak server"),
-            ("-gip", "--ga4gh-ip",                
-             localhost,      "ga4ghIP",               
-             "store", "Set the ip address of the ga4gh server"),
-            ("-kp",  "--keycloak-port",           
-             "8080",         "keycloakPort",          
-             "store", "Set the port number of the keycloak server"), 
-            ("-gp",  "--ga4gh-port",              
-             "8000",         "ga4ghPort",             
-             "store", "Set the port number of the ga4gh server"),
-            ("-r",   "--realm-name",              
-             "CanDIG",       "realmName",             
-             "store", "Set the keycloak realm name"),
-            ("-gid", "--ga4gh-id",                
-             "ga4gh",        "ga4ghID",               
-             "store", "Set the ga4gh server client id"),
-            ("-kcn", "--keycloak-container-name", 
-             keycloakName,   "keycloakContainerName", 
-             "store", "Set the keycloak container name"),
-            ("-gcn", "--ga4gh-container-name",    
-             ga4ghName,      "ga4ghContainerName",    
-             "store", "Set the ga4gh server container name"),
-            ("-kin", "--keycloak-image-name",     
-             keycloakName,   "keycloakImageName",     
-             "store", "Set the keycloak image tag"),
-            ("-gin", "--ga4gh-image-name",        
-             ga4ghName,      "ga4ghImageName",        
-             "store", "Set the ga4gh image tag"),
-            ("-au",  "--admin-username",          
-             "admin",        "adminUsername",         
-             "store", "Set the administrator account username"),
-            ("-uu",  "--user-username",           
-             "user",         "userUsername",          
-             "store", "Set the user account username"),
-            ("-gs",  "--ga4gh-secret",            
-             self.ga4ghSecret,    "ga4ghSecret",           
-             "store", "Client secret for the ga4gh server"),
-            ("-fin", "--funnel-image-name",       
-             funnelName,     "funnelImageName",       
-             "store", "Set the funnel image tag"),
-            ("-fcn", "--funnel-container-name",   
-             funnelName,     "funnelContainerName",   
-             "store", "Set the funnel container name"),
-            ("-fp",  "--funnel-port",             
-             "3002",         "funnelPort",            
-             "store", "Set the funnel port number"),
-            ("-fip", "--funnel-ip",               
-             localhost,      "funnelIP",              
-             "store", "Set the funnel ip address"),
-            ("-fid", "--funnel-id",               
-             "funnel",       "funnelID",              
-             "store", "Set the funnel client id"),
-            ("-fs",  "--funnel-secret",           
-             self.funnelSecret,   "funnelSecret",          
-             "store", "Set the funnel client secret"),
-            ("-f",   "--funnel",                  
-             False,          "funnel",                
-             "store_true", "Deploy the funnel server"),
-            ("-t",   "--token-tracer",            
-             False,           "tokenTracer",          
-             "store_true", "Deploy and run the token tracer program"),
-            ("-ng",  "--no-ga4gh",                
-             False,           "noGa4gh",              
-             "store_true", "Do not deploy the GA4GH server"),
-            ("-vip", "--vagrant-ip",              
-             localhost,       "vagrantIP",            
-             "store",      "The IP on which the Vagrant container is accessible"),
-            ("-upwd", "--user-password",          
-             "user",          "userPassword",         
-             "store",      "Set the user account password"),
-            ("-apwd", "--admin-password",         
-             "admin",         "adminPassword",        
-             "store",      "Set the administrator password")]
+            ("-s",              "--singularity", 
+              False,              "singularity",
+              "store_true",       "Deploy using singularity containers"),
+            ("-i",              "--ip",                      
+              None,               "ip",                    
+              "store",            "Set the ip address of both servers"),
+            ("-kip",            "--keycloak-ip",             
+              localhost,          "keycloakIP",            
+              "store",            "Set the ip address of the keycloak server"),
+            ("-gip",            "--ga4gh-ip",                
+              localhost,          "ga4ghIP",               
+              "store",            "Set the ip address of the ga4gh server"),
+            ("-kp",             "--keycloak-port",           
+              "8080",             "keycloakPort",          
+              "store",            "Set the port number of the keycloak server"), 
+            ("-gp",             "--ga4gh-port",              
+              "8000",             "ga4ghPort",             
+              "store",            "Set the port number of the ga4gh server"),
+            ("-r",              "--realm-name",              
+              "CanDIG",           "realmName",             
+              "store",            "Set the keycloak realm name"),
+            ("-gid",            "--ga4gh-id",                
+              "ga4gh",            "ga4ghID",               
+              "store",            "Set the ga4gh server client id"),
+            ("-kcn",            "--keycloak-container-name", 
+              keycloakName,       "keycloakContainerName", 
+              "store",            "Set the keycloak container name"),
+            ("-gcn",            "--ga4gh-container-name",    
+              ga4ghName,          "ga4ghContainerName",    
+              "store",            "Set the ga4gh server container name"),
+            ("-kin",            "--keycloak-image-name",     
+              keycloakName,       "keycloakImageName",     
+              "store",            "Set the keycloak image tag"),
+            ("-gin",            "--ga4gh-image-name",        
+              ga4ghName,          "ga4ghImageName",        
+             "store",             "Set the ga4gh image tag"),
+            ("-au",             "--admin-username",          
+              "admin",            "adminUsername",         
+              "store",            "Set the administrator account username"),
+            ("-uu",             "--user-username",           
+              "user",             "userUsername",          
+              "store",            "Set the user account username"),
+            ("-gs",             "--ga4gh-secret",            
+              self.ga4ghSecret,   "ga4ghSecret",           
+              "store",            "Client secret for the ga4gh server"),
+            ("-fin",            "--funnel-image-name",       
+              funnelName,         "funnelImageName",       
+              "store",            "Set the funnel image tag"),
+            ("-fcn",            "--funnel-container-name",   
+              funnelName,         "funnelContainerName",   
+              "store",            "Set the funnel container name"),
+            ("-fp",             "--funnel-port",             
+              "3002",             "funnelPort",            
+              "store",            "Set the funnel port number"),
+            ("-fip",            "--funnel-ip",               
+              localhost,          "funnelIP",              
+              "store",            "Set the funnel ip address"),
+            ("-fid",            "--funnel-id",               
+              "funnel",           "funnelID",              
+              "store",            "Set the funnel client id"),
+            ("-fs",             "--funnel-secret",           
+              self.funnelSecret,  "funnelSecret",          
+              "store",            "Set the funnel client secret"),
+            ("-f",              "--funnel",                  
+              False,              "funnel",                
+              "store_true",       "Deploy the funnel server"),
+            ("-t",              "--token-tracer",            
+              False,              "tokenTracer",          
+              "store_true",       "Deploy and run the token tracer program"),
+            ("-ng",             "--no-ga4gh",                
+              False,              "noGa4gh",              
+              "store_true",       "Do not deploy the GA4GH server"),
+            ("-upwd",           "--user-password",          
+              "user",             "userPassword",         
+              "store",            "Set the user account password"),
+            ("-apwd",           "--admin-password",         
+              "admin",            "adminPassword",        
+              "store",            "Set the administrator password")]
 
         for subList in commandList:
             parser.add_argument(subList[0], subList[1], default=subList[2], dest=subList[3], action=subList[4], help=subList[5])
 
         rewriteGroup.add_argument("-o",  "--override",    default=False,                   action="store_true", help="Force the removal of an existing source code directory")
         rewriteGroup.add_argument("-nc", "--no-config",    default=False, dest="noConfig", action="store_true", help="Surpress reconfiguration of the client_secrets for the GA4GH server")
-
-        dataGroup.add_argument("-ed",    "--extra-data",  default=False, dest="extraData", action="store_true", help="Add additional test data to the ga4gh server")
-        dataGroup.add_argument("-nd",    "--no-data",     default=False, dest="noData",    action="store_true", help="Deploy the ga4gh server with no data")
-
-        deployGroup.add_argument("-s",   "--singularity", default=False,                  action="store_true", help="Deploy using singularity containers")
-        deployGroup.add_argument("-v",   "--vagrant",     default=False, dest="vagrant",  action="store_true", help="Deploy the deployer onto a Vagrant container that will then use Singularity containers (for testing)")
 
         # parse for command line arguments
         args = parser.parse_args(commandArgs)
