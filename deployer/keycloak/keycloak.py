@@ -47,8 +47,8 @@ class keycloak:
         if args.singularity:
             self.deploySingularity(args)
         elif not args.vagrant:
-            self.deployDocker(args)
-
+            # self.deployDocker(args)
+            self.deployDockerHub(args)
 
 
     def deployDocker(self, args):
@@ -83,9 +83,9 @@ class keycloak:
 
         # check if docker is working
         # abort if docker fails or is inaccessible
-        if buildKeycloakCode != 0:
-            print("ERROR: Docker build has failed to build image.")
-            exit(1)
+        # if buildKeycloakCode != 0:
+        #     print("ERROR: Docker build has failed to build image.")
+        #     exit(1)
 
         # we need to capture port errors
         # without interrupting the server
@@ -98,6 +98,59 @@ class keycloak:
                               args.keycloakPort + ":8080", "--name", args.keycloakContainerName, args.keycloakImageName])
         else:
             subprocess.Popen(["docker", "run", "-p", args.keycloakPort + ":8080", "--name", args.keycloakContainerName, args.keycloakImageName])
+
+
+    def deployDockerHub(self, args):
+        """
+        Pulls keycloak from Docker Hub and configures it
+        """
+        imageRepo = "dalos/docker-keycloak"
+        print('pulling image')
+        pull = ["docker", "pull", imageRepo]
+        subprocess.call(pull)
+
+        print('image pulled, creating container...')
+        argList = [args.tokenTracer, args.realmName, args.adminUsername,  args.adminPassword, args.userUsername, args.userPassword ] 
+        # "{0} {1} {2} {3} {4} {5}".format(*argList)
+        create = ["docker", "create", "-p", args.keycloakPort + ":8080", 
+                  "--name", args.keycloakContainerName, 
+                  "-e", "tokenTracer=''" + str(args.tokenTracer) + "'", 
+                  "-e", "REALM_NAME='" + args.realmName + "'",
+                  "-e", "ADMIN_USERNAME='" + args.adminUsername + "'",
+                  "-e", "ADMIN_PASSWORD='" + args.adminPassword + "'",
+                  "-e", "USER_USERNAME='" + args.userUsername + "'",
+                  "-e", "USER_PASSWORD='" + args.userPassword + "'", 
+                  imageRepo]
+        subprocess.call(create)
+        print('container created')
+
+        configDir = "/opt/jboss"
+
+        print('copying files')
+        configPath = '/'.join(('.', 'keycloakConfig.json'))
+        configFile = pkg_resources.resource_filename(self.pkgName, configPath)
+        copyConfig = ["docker", "cp", configFile, 
+                      "{0}:{1}/keycloakConfig.json".format(args.keycloakContainerName, configDir)]
+        subprocess.call(copyConfig)
+
+        #pwdPath = '/'.join(('.', 'keycloakPassword.sh'))
+        #pwdFile = pkg_resources.resource_filename(self.pkgName, pwdPath)
+        #copyPwd = ["docker", "cp", pwdFile, 
+        #           "{0}:{1}/keycloakPassword.sh".format(args.keycloakContainerName, configDir)]
+        #subprocess.call(copyPwd)
+
+        #startPath = '/'.join(('.', 'keycloakStart.sh'))
+        #startFile = pkg_resources.resource_filename(self.pkgName, startPath)
+        #copyStart = ["docker", "cp", startFile, 
+        #             "{0}:{1}/keycloakStart.sh".format(args.keycloakContainerName, configDir)]
+        #subprocess.call(copyStart)
+
+        print('files copied')
+        # start the keycloak server
+
+        start = ["docker", "start", args.keycloakContainerName]
+        subprocess.Popen(start)
+        print('deployed')
 
 
     def deploySingularity(self, args):

@@ -1,11 +1,11 @@
 #!/bin/bash
 
-tokenTracer=${1}
-REALM_NAME=${2}
-ADMIN_USERNAME=${3}
-ADMIN_PASSWORD=${4}
-USER_USERNAME=${5}
-USER_PASSWORD=${6}
+#tokenTracer=
+#REALM_NAME=
+#ADMIN_USERNAME
+#ADMIN_PASSWORD=${4}
+#USER_USERNAME=${5}
+#USER_PASSWORD=${6}
 
 # sets up keycloak to listen on the external eth0 IP
 
@@ -22,15 +22,18 @@ CONFIG_FILE="${BASE_DIR}/${CONFIG_FILENAME}"
 
 # start the keycloak server to listen on the external IP address
 
-/srv/keycloakPassword.sh ${IP_ADDR} ${REALM_NAME} ${ADMIN_USERNAME} ${ADMIN_PASSWORD} ${USER_USERNAME} ${USER_PASSWORD} &
+#/srv/keycloakPassword.sh ${IP_ADDR} ${REALM_NAME} ${ADMIN_USERNAME} ${ADMIN_PASSWORD} ${USER_USERNAME} ${USER_PASSWORD} &
 
 # run the token tracer if specified
 if [ "${tokenTracer}" == "True" ]
 then    
-    /usr/bin/python /srv/tokenTracer/tokenTracer/tokenTracer.py &
+    /usr/bin/python /srv/tokenTracer/tokenTracer/tracer.py &
 fi
 
-/srv/keycloak-3.4.0.Final/bin/standalone.sh -b ${IP_ADDR} -Dkeycloak.migration.action=import -Dkeycloak.migration.provider=singleFile -Dkeycloak.migration.file="${CONFIG_FILE}" -Dkeycloak.migration.strategy=OVERWRITE_EXISTING 
+# /srv/keycloak-3.4.0.Final/bin/standalone.sh -b ${IP_ADDR} -Dkeycloak.migration.action=import -Dkeycloak.migration.provider=singleFile -Dkeycloak.migration.file="${CONFIG_FILE}" -Dkeycloak.migration.strategy=OVERWRITE_EXISTING 
+
+/srv/keycloak/bin/standalone.sh -b ${IP_ADDR} -Dkeycloak.migration.action=import -Dkeycloak.migration.provider=singleFile -Dkeycloak.migration.file="${CONFIG_FILE}" -Dkeycloak.migration.strategy=OVERWRITE_EXISTING
+
 
 exit 0
 

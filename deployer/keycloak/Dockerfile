@@ -5,24 +5,6 @@
 # Deploys the keycloak server
 FROM debian
 
-ARG tokenTracer="False"
-
-ARG realmName="CanDIG"
-
-ARG adminUsername="admin"
-ARG adminPassword="admin"
-ARG userUsername="user"
-ARG userPassword="user"
-
-ENV tokenTracer=$tokenTracer
-
-ENV realmName=$realmName
-
-ENV adminUsername=$adminUsername
-ENV adminPassword=$adminPassword
-ENV userUsername=$userUsername
-ENV userPassword=$userPassword
-
 ENV DEBIAN_FRONTEND="noninteractive"
 
 # Download and install wget, unzip, and java
@@ -37,6 +19,10 @@ WORKDIR /srv
 RUN wget https://downloads.jboss.org/keycloak/3.4.0.Final/keycloak-3.4.0.Final.zip
 RUN unzip keycloak-3.4.0.Final.zip
 
+# rename the version-dependent directory name
+# to a version-independent name
+RUN mv keycloak-3.4.0.Final keycloak
+
 # copy over the configuration files for keycloak into the container
 COPY ./keycloakStart.sh /srv/keycloakStart.sh
 COPY ./keycloakConfig.json /srv/keycloakConfig.json
@@ -47,16 +33,10 @@ RUN chmod a+x /srv/keycloakStart.sh
 RUN chmod a+x /srv/tokenTracerDeploy.sh
 RUN chmod a+x /srv/keycloakPassword.sh
 
-RUN /srv/tokenTracerDeploy.sh $tokenTracer
+# install the token tracer
+# RUN /srv/tokenTracerDeploy.sh True
 
 # Start keycloak when the container is run
 # the keycloakStart.sh script determines the local IP on which
 # the keycloak server should listen
-CMD /srv/keycloakStart.sh $tokenTracer $realmName $adminUsername $adminPassword $userUsername $userPassword
-
-
-
-
-
-
-
+CMD /srv/keycloakStart.sh
