@@ -173,8 +173,6 @@ The command-line options can modify the following variables:
 +---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
 | --ga4gh-id                | -gid        | ga4gh                         | The Keycloak client id of the GA4GH server with which it will register with Keycloak as a client   |
 +---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+ 
-| --ga4gh-image-name        | -gin        | ga4gh_candig                  | The name to assign the resulting Docker image of the GA4GH server                                  |
-+---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
 | --ga4gh-container-name    | -gcn        | ga4gh_candig                  | The name to assign the container running the GA4GH server image                                    |
 +---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
 | --ga4gh-secret            | -gs         | SEE CONFIGURATION             | The client secret for the GA4GH server                                                             |
@@ -184,10 +182,10 @@ The command-line options can modify the following variables:
 | --keycloak-port           | -kp         | 8080                          | The port number the Keycloak server listens on.                                                    |
 +---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
 | --keycloak-ip             | -kip        | 127.0.0.1                     | The IP of the Keycloak server to listen on.                                                        |
-+---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+ 
-| --keycloak-image-name     | -kin        | keycloak_candig               | The name to assign the resulting Docker image of the Keycloak server                               |
 +---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
 | --keycloak-container-name | -kcn        | keycloak_candig               | The name to assign the container running the Keycloak server image                                 |
++---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
+| --no-config               | -nc         | False                         | Disable Keycloak reconfiguration                                                                   |
 +---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
 | --admin-username          | -au         | admin                         | The username of the Keycloak administrator account                                                 |
 +---------------------------+-------------+-------------------------------+----------------------------------------------------------------------------------------------------+
@@ -257,8 +255,6 @@ You would then set the deployer to configure GA4GH and Keycloak to listen on ``1
 
     $ candigDeploy -i 192.168.12.1
 
-The deployer program will create a source code directory for GA4GH if one does not exist. It will reuse this source code in subsequent deployments, and reconfigure it based on the options provided. 
-
 1.5.1 Private IP Addresses
 ============================
 
@@ -324,6 +320,18 @@ You can also change the IP addresses of Keycloak and GA4GH separately through th
     $ candigDeploy -kip 127.123.45.678
 
 This causes Keycloak to be assigned the IP address ``127.123.45.678``. GA4GH will still listen on the default ``127.0.0.1``. 
+
+Note that Keycloak actually will always listen to its local ethernet interface on the Docker container, 
+so you will only be able to make requests to the ethernet interface on the Docker container.
+Thus, this will not truly change its underlying IP address.
+The ``-kip`` argument only adjusts the configuration of the application servers and Keycloak
+so that they know which interface to use on the host to communicate with each other. 
+This interface is typically supplied by the hypervisor. 
+
+The case is similar for GA4GH, where Apache will listen to all interfaces in the Docker deployment,
+and so will broadcast onto the local host by listening on the correct interface. Again, the 
+configuration of IPs tells the configuration which interface on the host to use to reach
+other containers and servers.
 
 For GA4GH, we can assign an IP ``192.168.00.100``:
 

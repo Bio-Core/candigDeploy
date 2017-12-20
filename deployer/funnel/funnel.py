@@ -22,6 +22,10 @@ class funnel:
 
         Coordinates the deployment scheme based on the arguments
         Configures and deploys the software container holding funnel
+
+        Parameters:
+
+        argparse.Namespace args - command-line arguments object
         """
         # deploy funnel if selected
         if args.funnel:
@@ -64,8 +68,8 @@ class funnel:
 
         Parameters:
 
-        argsObject args - An object containing the command-line 
-                          arguments as attributes
+        argparse.Namespace args - An object containing the command-line 
+                                  arguments as attributes
 
         Returns: None
         """

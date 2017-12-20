@@ -19,21 +19,38 @@ class deployer:
     passing of arguments for the deployment 
     sequence of the CanDIG project.
 
+    The deployer first fetches command-line arguments
+    from the cmdparse singleton (1).
+
+    Then, the deployer sequentially launches
+    each of the subdeployers. Each subdeployer
+    manages the deployment of a single application
+    server and its different deployment schemes (2).
+    The command-line arguments are passed to these
+    subdeployers.
+
+    There are three such subdeployers:
+    1. keycloak
+    2. ga4gh
+    3. funnel
+
+    These will support Docker (possibly and Singularity) deployments.
+
     +--------------+              +-----------+
     | deployer     | ----(1)--->  | cmdparse  |
     |              | <-- args --  |           |
     +--------------+              +-----------+
      |
     (2)
-     |               +----------+
+     |               +----------+ -> docker
      +-> deploys --> |keycloak  |
-     |               +----------+
+     |               +----------+ -> singularity
      |
-     |               +----------+
+     |               +----------+ -> docker
      +-> deploys --> |ga4gh     |
-     |               +----------+
+     |               +----------+ -> singularity
      |
-     |               +----------+
+     |               +----------+ -> docker
      +-> deploys --> |funnel    |
                      +----------+
     """
@@ -65,50 +82,35 @@ class deployer:
         # get the command line arguments
         args = self.cmdparse.commandParser(sys.argv[1:])
 
-        # post-process the command-line arguments
-        postArgs = self.argsPostProcess(args)
-
         # initiate the deployment procedure 
-        self.routeDeploy(postArgs)
+        self.routeDeploy(args)
 
         # print deployment information
-        self.printDeploy(postArgs)
+        self.printDeploy(args)
         exit()
-
-
-    def argsPostProcess(self, args):
-        """
-        Post-process the arguments with additional logic
-        based on the command-line arguments themselves
-        """
-        # override the keycloak, ga4gh and funnel ip addresses 
-        # if ip is specified
-        if args.ip:
-            args.keycloakIP = args.ga4ghIP = args.funnelIP = args.ip
-
-        return args
 
 
     def routeDeploy(self, args):
         """
-        Chooses which deployment scheme to use based on the arguments provided
+        Allocates deployment to each of the subdeployers
+        Passes command-line arguments of each of the subdeployers:
+        1. keycloak
+        2. ga4gh
+        3. funnel
 
-        The deployment router selects between the following configurations:
+        The subdeployers choose between their own deployment
+        schemes based on the command-line arguments
 
-        1. Keycloak
-           a. Docker
-           b. Singularity
+        Manages cleanup prior to deployment
+        Existing containers with duplicate names and ports
+        from previous deployments will otherwise conflict 
+        with the current deployment
 
-        2. GA4GH
-           a. Docker
-           b. Singularity
+        Parameters:
 
-        3. Funnel
-           a. Docker
-
-        The router will also establish a GA4GH source code repoistory to push to containers if not available
+        argparse.Namespace args - Object containing command-line
+                                  arguments as attributes
         """
-
         # remove duplicate containers
         self.containerTeardown(args.keycloakContainerName, args.ga4ghContainerName, args.funnelContainerName)
 
@@ -156,7 +158,8 @@ class deployer:
 
         Parameters:
 
-        argsObject args - An object containing the command-line arguments as attributes
+        argparse.Namespace args - Object containing command-line arguments 
+                                  as attributes
 
         Returns: None
         """
@@ -165,7 +168,6 @@ class deployer:
 
         # print out Docker container information for keycloak
         if not args.singularity:
-            print("IMAGE:     " + args.keycloakImageName) 
             print("CONTAINER: " + args.keycloakContainerName)
 
         print("IP:PORT:   " + args.keycloakIP + ":" + args.keycloakPort)
@@ -173,7 +175,6 @@ class deployer:
 
         # print out Docker container information for ga4gh
         if not args.singularity:
-            print("IMAGE:     " + args.ga4ghImageName)
             print("CONTAINER: " + args.ga4ghContainerName)
 
         print("IP:PORT:   " + args.ga4ghIP + ":" + args.ga4ghPort)
@@ -181,7 +182,6 @@ class deployer:
         # print out Docker container information for funnel
         if args.funnel:
             print("\nFunnel is accessible at:")
-            print("IMAGE:     " + args.funnelImageName)
             print("CONTAINER: " + args.funnelContainerName)
             print("IP:PORT:   " + args.funnelIP + ":" + args.funnelPort)     
 

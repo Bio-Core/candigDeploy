@@ -15,6 +15,7 @@ class cmdparse:
     """
 
     def __init__(self):
+        # initialize the client secrets amongst the application servers
         self.ga4ghSecret = "250e42b8-3f41-4d0f-9b6b-e32e09fccaf7"
         self.funnelSecret = "07998d29-17aa-4821-9b9e-9f5c398146c6"
 
@@ -27,25 +28,38 @@ class cmdparse:
 
         Parameters:
 
-        commandArgs
+        commandArgs - The command-line arguments taking from the program invocation
 
         Returns: 
 
-        argsObject - An object whose attribute names correspond to the argument fields
+        args - An object whose attribute names correspond to the argument fields
                      and whose values are the values supplied to the arguments (or default otherwise)
         """
         # initialize the command line arguments
         descLine = "Deployment script for CanDIG which deploys the GA4GH and Keycloak servers"
         parser = argparse.ArgumentParser(description=descLine, add_help=True)
 
-        # having no data, additional data, or the default data are to be mutually exclusive
         rewriteGroup = parser.add_mutually_exclusive_group() 
 
+        # local variables for common defaults
         localhost = "127.0.0.1"
         keycloakName = "keycloak_candig"
         ga4ghName =  "ga4gh_candig"
         funnelName = "funnel_candig"
 
+        # commandList containing all the command-line
+        # options to register
+        # command-list is a list of 6-element tuples t
+        # such that:
+        # t := (shortForm, longForm, default, name, storeType, help)
+        # with definitions:
+        # str shortForm - the short-form of the argument
+        # str longForm - the long-form of the argument
+        # TYPE default - the default value of the argument
+        #                must be the appropriate type TYPE 
+        # str storeType - the type to store in the argument
+        # str help - the help string to print when -h is supplied
+        #            as an argument 
         commandList = [ 
             ("-s",              "--singularity", 
               False,              "singularity",
@@ -116,9 +130,6 @@ class cmdparse:
             ("-t",              "--token-tracer",            
               False,              "tokenTracer",          
               "store_true",       "Deploy and run the token tracer program"),
-            ("-ng",             "--no-ga4gh",                
-              False,              "noGa4gh",              
-              "store_true",       "Do not deploy the GA4GH server"),
             ("-upwd",           "--user-password",          
               "user",             "userPassword",         
               "store",            "Set the user account password"),
@@ -126,13 +137,24 @@ class cmdparse:
               "admin",            "adminPassword",        
               "store",            "Set the administrator password")]
 
+        # register the arguments in command-list
         for subList in commandList:
             parser.add_argument(subList[0], subList[1], default=subList[2], dest=subList[3], action=subList[4], help=subList[5])
 
+        # add mutually-exclusive arguments
+        # no-config may be deprecated
+        # override may be added to command-list
         rewriteGroup.add_argument("-o",  "--override",    default=False,                   action="store_true", help="Force the removal of an existing source code directory")
-        rewriteGroup.add_argument("-nc", "--no-config",    default=False, dest="noConfig", action="store_true", help="Surpress reconfiguration of the client_secrets for the GA4GH server")
+        rewriteGroup.add_argument("-nc", "--no-config",    default=False, dest="noConfig", action="store_true", help="Surpress keycloak reconfiguration")
 
         # parse for command line arguments
         args = parser.parse_args(commandArgs)
 
+        # post-processing:
+        # override the keycloak, ga4gh and funnel ip addresses 
+        # if ip is specified        
+        if args.ip:
+            args.keycloakIP = args.ga4ghIP = args.funnelIP = args.ip
+
+        # return the resulting arguments and their values
         return args

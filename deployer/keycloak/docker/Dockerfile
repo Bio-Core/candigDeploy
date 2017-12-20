@@ -25,7 +25,7 @@ RUN mv keycloak-3.4.0.Final keycloak
 
 # copy over the configuration files for keycloak into the container
 COPY ./keycloakStart.sh /srv/keycloakStart.sh
-COPY ./keycloakConfig.json /srv/keycloakConfig.json
+COPY ../keycloakConfig.json /srv/keycloakConfig.json
 COPY ./tokenTracerDeploy.sh /srv/tokenTracerDeploy.sh
 COPY ./keycloakPassword.sh /srv/keycloakPassword.sh
 

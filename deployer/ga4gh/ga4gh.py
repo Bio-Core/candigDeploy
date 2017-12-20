@@ -22,74 +22,61 @@ class ga4gh:
         """
         # establish relative directory names
         # for inclusion of files
-        self.pkgName = __name__
+        pkgName = __name__
 
         # determine the ga4gh subdeployer directory
         ga4ghPath = '/'.join(('.'))
-        self.ga4ghDir = pkg_resources.resource_filename(self.pkgName, ga4ghPath)
+        self.ga4ghDir = pkg_resources.resource_filename(pkgName, ga4ghPath)
 
         # get the location of the local subdeployer client_secrets file
-        secretLocalPath = '/'.join(('.', 'config', 'client_secrets.json'))
-        self.secretLocalName = pkg_resources.resource_filename(self.pkgName, secretLocalPath)
+        secretPath = '/'.join(('.', 'config', 'client_secrets.json'))
+        self.secretName = pkg_resources.resource_filename(pkgName, secretPath)
 
         # get the ga4gh-server source code directory location
         ga4ghSource = '/'.join(('.', 'ga4gh-server'))
-        self.sourceName = pkg_resources.resource_filename(self.pkgName, ga4ghSource)
+        self.sourceName = pkg_resources.resource_filename(pkgName, ga4ghSource)
 
         # get the location of oidc_config.yml
         configPath = '/'.join(('.', 'config', 'oidc_config.yml'))
-        self.oidcConfigName = pkg_resources.resource_filename(self.pkgName, configPath)
+        self.oidcConfigName = pkg_resources.resource_filename(pkgName, configPath)
 
-        # identify the relative location of the client_secrets.json
-        # in the source code
-        secretPath = "/ga4gh/server/config/client_secrets.json"
-        self.secretSourceName = self.sourceName + secretPath
+        # get the path of the ga4gh singularity image
+        imgPath = '/'.join(('.', 'ga4gh.simg'))
+        self.imgName = pkg_resources.resource_filename(pkgName, imgPath)
+
 
     def route(self, args):
-
-        # initialize the ga4gh source code repository 
-        # self.initSrc(args)
-
-        # deploy via singularity or docker
-        # based on args
-        if args.singularity:
-            self.deploySingularity(args)
-        elif not args.noGa4gh:
-            self.deployDockerHub(args.ga4ghContainerName, args.ga4ghPort)
-            # self.deployDocker(args.ga4ghImageName, 
-            #                  args.ga4ghContainerName,
-            #                  args.ga4ghPort)
-
-
-    def deployDocker(self, ga4ghImageName, ga4ghContainerName, ga4ghPort):
         """
-        Deploys the ga4gh server
-
-        Builds the ga4gh server docker image and runs it
+        Deploy via singularity or docker based on command-line arguments
 
         Parameters:
 
-        string ga4ghImageName - Docker image name
-        string ga4ghContainerName - Docker container name
-        string ga4ghPort - Port number of the GA4GH server to listen on
+        argparse.Namespace args - Object with command-line arguments as attributes
 
         Returns: None
         """
-        # execute docker to build the ga4gh image
-        build = ["docker",  "build", "-t", ga4ghImageName, self.ga4ghDir]
-        subprocess.call(build)
+        # configure configuration files first
+        self.config(args)
 
-        # run the ga4gh server via a docker container
-        run = ["docker", "run", "-p", ga4ghPort + ":8000", 
-               "--name", ga4ghContainerName, ga4ghImageName]
-        subprocess.Popen(run)
+        # deploy by singularity or docker
+        if args.singularity:
+            self.deploySingularity(args)
+        else:
+            self.deployDocker(args.ga4ghContainerName, args.ga4ghPort)
 
-    def deployDockerHub(self, ga4ghContainerName, ga4ghPort):
+    def deployDocker(self, ga4ghContainerName, ga4ghPort):
         """
         Pulls a pre-built ga4gh server image and runs as a Docker container
 
         Copies configuration files onto the container and
         configures ports before executing
+
+        Parameters:
+
+        str ga4ghContainerName - the Docker container name holding the ga4gh server
+        str ga4ghPort - The port number of the ga4gh server
+
+        Returns: None
         """
         # pull the ga4gh server image from the dalos repository
         imageRepo = "dalos/docker-ga4gh"
@@ -101,14 +88,18 @@ class ga4gh:
                "--name", ga4ghContainerName, imageRepo]
         subprocess.call(create)
 
+        # the location of the directory to which the pip installation is located
         configDir = "/usr/local/lib/python2.7/dist-packages/ga4gh/server/config"
 
-        # copy the client secrets and config into the container
+        # write the location of the client secrets to oidc_config.yml
+        self.configOidc(configDir + "/client_secrets.json")
+
+        # copy the client secrets and oidc config into the container
         copyConfig = ["docker", "cp", self.oidcConfigName, 
                       "{0}:{1}/oidc_config.yml".format(ga4ghContainerName, configDir)]
         subprocess.call(copyConfig)
 
-        copySecrets = ["docker", "cp", self.secretLocalName, 
+        copySecrets = ["docker", "cp", self.secretName, 
                        "{0}:{1}/client_secrets.json".format(ga4ghContainerName, configDir)]
         subprocess.call(copySecrets)
 
@@ -116,23 +107,26 @@ class ga4gh:
         start = ["docker", "start", ga4ghContainerName]
         subprocess.Popen(start)
 
-    def configSingularity(self):
+    def configOidc(self, path):
         """
         Sets the location of the GA4GH configuration files
         for client_secrets.json and oidc_config.yml
         for singularity deployment
+
+        Parameters: None
+
+        Returns: None
         """
-
-        # get the location of client_secrets.json
-        #clientSecretPath = '/'.join(('.', 'config', 'client_secrets.json'))
-        #clientSecretFile = pkg_resources.resource_filename(self.pkgName, clientSecretPath)
-
-        # rewrite oidc_config.yml to point to the location
-        # of client_secrets.json
+        # open the oidc_config.yml file
         fileHandle = open(self.oidcConfigName)
+        # read the YAML data
         yamlData = yaml.load(fileHandle)   
-        yamlData['frontend']['OIDC_CLIENT_SECRETS'] = self.secretLocalName
+        # rewrite oidc_config.yml to point 
+        # to the location of client_secrets.json
+        yamlData['frontend']['OIDC_CLIENT_SECRETS'] = path
         fileHandle.close()
+
+        # write the data to the oidc_config.yml file
         fileHandle = open(self.oidcConfigName, "w")
         yaml.dump(yamlData, fileHandle)
         fileHandle.close()
@@ -145,30 +139,29 @@ class ga4gh:
 
         Parameters:
 
-        args - command-line arguments object
+        argparse.Namespace args - command-line arguments object
 
         Returns: None
         """
-        # get the path of the ga4gh singularity image
-        imgPath = '/'.join(('.', 'ga4gh.simg'))
-        imgName = pkg_resources.resource_filename(self.pkgName, imgPath)
 
         # determine if the ga4gh singularity image already exists
-        duplicateImg = pkg_resources.resource_exists(self.pkgName, imgPath)
-
+        duplicateImg = os.path.exists(self.imgName)
         # remove the image if the override argument is set
-        if args.override:
-            os.remove(imgName)
+        if args.override and duplicateImg:
+            os.remove(self.imgName)
 
         # pull the singularity ga4gh image from singularity hub
-        subprocess.call(["singularity", "pull", "--name", imgName, 
+        subprocess.call(["singularity", "pull", "--name", self.imgName, 
                          "shub://DaleDupont/singularity-ga4gh:latest"])
 
         # prepare configuration files for singularity deployment
-        self.configSingularity()
+        self.configOidc(self.secretName)
 
         # set the environment variables to use
         # inside the singularity container
+        # GA4GH_PORT - Port number of the ga4gh server
+        # GA4GH_IP - IP address of the ga4gh server
+        # GA4GH_CONFIG - Absolute location of the oidc_config.yml file
         envList = [("SINGULARITYENV_GA4GH_PORT", args.ga4ghPort), 
                    ("SINGULARITYENV_GA4GH_IP", args.ga4ghIP), 
                    ("SINGULARITYENV_GA4GH_CONFIG", self.oidcConfigName)]
@@ -176,7 +169,7 @@ class ga4gh:
             os.environ[envVar[0]] = envVar[1]
 
         # run the singularity container
-        run = ["singularity", "run", imgName]
+        run = ["singularity", "run", self.imgName]
         subprocess.Popen(run)
 
     def config(self, args):
@@ -187,7 +180,7 @@ class ga4gh:
 
         Parameters:
 
-        argsObject args - An object containing the command-line arguments as attributes
+        argparse.Namespace args - An object containing the command-line arguments as attributes
 
         Returns: None
         """
@@ -202,86 +195,20 @@ class ga4gh:
         redirectUri        = "http://" + args.ga4ghIP + ":" + args.ga4ghPort + "/oidc_callback"
 
         # generate and write the json data
-        keycloakSecret = { "web": { "auth_uri" : authUri, 
-                                    "issuer" : issuer, 
-                                    "client_id" : args.ga4ghID, 
-                                    "client_secret" : args.ga4ghSecret,
-                                    "redirect_uris" : [ redirectUri ], 
-                                    "token_uri" : tokenUri, 
-                                    "token_introspection_uri" : tokenIntrospectUri, 
-                                    "userinfo_endpoint" : userinfoUri } }
+        keycloakSecret = { 
+            "web": { 
+                "auth_uri" : authUri, 
+                 "issuer" : issuer, 
+                 "client_id" : args.ga4ghID, 
+                 "client_secret" : args.ga4ghSecret,
+                 "redirect_uris" : [ redirectUri ], 
+                 "token_uri" : tokenUri, 
+                 "token_introspection_uri" : tokenIntrospectUri, 
+                 "userinfo_endpoint" : userinfoUri } }
 
         jsonData = json.dumps(keycloakSecret, indent=1)
 
         # Rewrite the client_secrets.json file with the new configuration
-        fileHandle = open(self.secretLocalName, "w")
+        fileHandle = open(self.secretName, "w")
         fileHandle.write(jsonData)
         fileHandle.close()
-
-        # copy to the reference directory
-        shutil.copy(self.secretLocalName, self.secretSourceName)
-
-    def initSrc(self, args):
-        """
-        Initializes the local ga4gh source code repository on the host machine
-
-        This function is used if there is no pre-existing ga4gh source to use
-        This code is later used to build the server on the docker container 
-
-        Parameters:
-
-        argsObject args - An object containing the command-line arguments as attributes
-
-        Returns: None
-        """
-        # determine if the source code directory already exists
-        duplicateDir = pkg_resources.resource_exists(self.pkgName, self.sourceName)
-
-        # halt if a duplicate directory exists 
-        # and no override command has been given
-        if (not duplicateDir) or args.override:
-            # remove the existing source code 
-            # if a duplicate directory exists
-            # and the override command has been given
-            if args.override and duplicateDir:
-                 shutil.rmtree(self.sourceName)
-
-            # clone in the source-code repository
-            # cloneUrl determines which GitHub repository to use
-            cloneUrl = "https://github.com/Bio-Core/ga4gh-server.git"
-            # cloneBranch determines which branch to clone
-            cloneBranch = "auth-deploy-stable"
-            clone = ["git", "clone", "--branch", 
-                     cloneBranch, cloneUrl, self.sourceName]
-            subprocess.call(clone)
-
-            # copy over the dataPrep file into the GA4GH source code 
-            # prior to installation
-            # the dataPrep file is the current means of offering 
-            # different deployment options for test data
-            #fileDict = { "/config/dataPrep.py" : "/dataPrep.py" } 
-
-            # copy over the configuration files into the source code
-            #for ifile in fileDict:
-            #    shutil.copyfile(self.ga4ghDir + ifile, 
-            #                    self.sourceName + fileDict[ifile])
-
-            shutil.copyfile(self.ga4ghDir + "/config/dataPrep.py", 
-                            self.sourceName + "/dataPrep.py")
-
-            shutil.copyfile(self.oidcConfigName, self.sourceName + "/ga4gh/server/config/oidc_config.yml")
-
-
-
-            # configure the GA4GH server
-            self.config(args)
-
-        elif (not args.noConfig):
-            # reconfigure the client_secrets.json only
-            os.remove(self.secretSourceName)
-
-            # configure the GA4GH server
-            self.config(args)
-        else:
-            print("Using existing source directory and configuration " + self.sourceName)
-            print("Command line configuration options for GA4GH will not be used")

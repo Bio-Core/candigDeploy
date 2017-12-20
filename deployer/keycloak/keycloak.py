@@ -1,4 +1,3 @@
-
 import subprocess
 import pkg_resources
 import os
@@ -23,10 +22,18 @@ class keycloak:
         Constructor for the keycloak subdeployer
         """
         # get the location of the keycloak directory
-        self.pkgName = __name__
-        self.keycloakPath = '/'.join(('.'))
-        self.keycloakDir = pkg_resources.resource_filename(self.pkgName, self.keycloakPath)
+        pkgName = __name__
+        keycloakPath = '/'.join(('.'))
+        self.keycloakDir = pkg_resources.resource_filename(pkgName, keycloakPath)
 
+        configPath = '/'.join(('.', 'keycloakConfig.json'))
+        self.configJson = pkg_resources.resource_filename(pkgName, configPath)
+
+        zipPath = '/'.join(('.', "key.img.gz"))
+        self.zipName = pkg_resources.resource_filename(pkgName, zipPath)
+
+        imgPath = '/'.join(('.', 'key.img'))
+        self.imgName = pkg_resources.resource_filename(pkgName, imgPath)
 
     def route(self, args):
         """
@@ -36,82 +43,44 @@ class keycloak:
 
         Parameters:
 
-        args - The object containing the 
-               command-line arguments
+        argpase.Namespace args - The object containing the command-line 
+                                 arguments as attributes
+
+        Returns: None
         """
-
         # configure the keycloak server
-        self.config(args)
-
+        if not args.noConfig:
+            self.config(args)
         # choose between docker and singularity keycloak deployment
         if args.singularity:
             self.deploySingularity(args)
         else:
-            # self.deployDocker(args)
-            self.deployDockerHub(args)
-
+            self.deployDocker(args)
 
     def deployDocker(self, args):
         """
-        Deploys the keycloak server
-
-        Builds the keyserver docker image and runs it
+        Pulls keycloak from Docker Hub and configures it
 
         Parameters:
 
-        argsObject args - The object containing the command-line 
-                          arguments as attributes
+        argpase.Namespace args - The object containing the command-line 
+                                 arguments as attributes
 
         Returns: None
         """
-
-        # prepare the build arguments to the Keycloak Docker container
-        tokenArg = "tokenTracer=" + str(args.tokenTracer)
-        realmArg = "realmName=" + args.realmName
-        adminNameArg = "adminUsername=" + args.adminUsername
-        adminPwdArg = "adminPassword=" + args.adminPassword
-        userNameArg = "userUsername=" + args.userUsername
-        userPwdArg = "userPassword=" + args.userPassword
-  
-        keyProc = ["docker", "build", "-t", args.keycloakImageName,
-                   "--build-arg", tokenArg, "--build-arg", realmArg,
-                   "--build-arg", adminNameArg, "--build-arg", adminPwdArg,
-                   "--build-arg", userNameArg, "--build-arg",
-                   userPwdArg, self.keycloakDir]
-
-        buildKeycloakCode = subprocess.call(keyProc)
-
-        # check if docker is working
-        # abort if docker fails or is inaccessible
-        # if buildKeycloakCode != 0:
-        #     print("ERROR: Docker build has failed to build image.")
-        #     exit(1)
-
-        # we need to capture port errors
-        # without interrupting the server
-        # run the keycloak server as a background process
-        if args.tokenTracer:
-            # net_raw and net_admin are necesary 
-            # to have the network privileges to packet capture
-            # this is for tokenTracer support
-            subprocess.Popen(["docker", "run", "--cap-add", "net_raw", "--cap-add", "net_admin", "-p",
-                              args.keycloakPort + ":8080", "--name", args.keycloakContainerName, args.keycloakImageName])
-        else:
-            subprocess.Popen(["docker", "run", "-p", args.keycloakPort + ":8080", "--name", args.keycloakContainerName, args.keycloakImageName])
-
-
-    def deployDockerHub(self, args):
-        """
-        Pulls keycloak from Docker Hub and configures it
-        """
+        # pull the keycloak docker image from imageRepo
         imageRepo = "dalos/docker-keycloak"
-        print('pulling image')
         pull = ["docker", "pull", imageRepo]
         subprocess.call(pull)
 
-        print('image pulled, creating container...')
-        argList = [args.tokenTracer, args.realmName, args.adminUsername,  args.adminPassword, args.userUsername, args.userPassword ] 
-        # "{0} {1} {2} {3} {4} {5}".format(*argList)
+        # Create a docker container 
+        # passing in environment variables
+        # tokenTracer - deploy token tracer (boolean)
+        # REALM_NAME - realm name to use
+        # ADMIN_USERNAME - admin account username
+        # ADMIN_PASSWORD - admin account password
+        # USER_USERNAME - user account username
+        # USER_PASSWORD - user account password 
         create = ["docker", "create", "-p", args.keycloakPort + ":8080", 
                   "--name", args.keycloakContainerName, 
                   "-e", "tokenTracer=''" + str(args.tokenTracer) + "'", 
@@ -122,35 +91,15 @@ class keycloak:
                   "-e", "USER_PASSWORD='" + args.userPassword + "'", 
                   imageRepo]
         subprocess.call(create)
-        print('container created')
 
-        configDir = "/opt/jboss"
-
-        print('copying files')
-        configPath = '/'.join(('.', 'keycloakConfig.json'))
-        configFile = pkg_resources.resource_filename(self.pkgName, configPath)
-        copyConfig = ["docker", "cp", configFile, 
-                      "{0}:{1}/keycloakConfig.json".format(args.keycloakContainerName, configDir)]
+        # copy file to the docker container keycloakConfig.json
+        copyConfig = ["docker", "cp", self.configJson, 
+                      "{0}:/srv/keycloakConfig.json".format(args.keycloakContainerName)]
         subprocess.call(copyConfig)
 
-        #pwdPath = '/'.join(('.', 'keycloakPassword.sh'))
-        #pwdFile = pkg_resources.resource_filename(self.pkgName, pwdPath)
-        #copyPwd = ["docker", "cp", pwdFile, 
-        #           "{0}:{1}/keycloakPassword.sh".format(args.keycloakContainerName, configDir)]
-        #subprocess.call(copyPwd)
-
-        #startPath = '/'.join(('.', 'keycloakStart.sh'))
-        #startFile = pkg_resources.resource_filename(self.pkgName, startPath)
-        #copyStart = ["docker", "cp", startFile, 
-        #             "{0}:{1}/keycloakStart.sh".format(args.keycloakContainerName, configDir)]
-        #subprocess.call(copyStart)
-
-        print('files copied')
         # start the keycloak server
-
         start = ["docker", "start", args.keycloakContainerName]
         subprocess.Popen(start)
-        print('deployed')
 
 
     def deploySingularity(self, args):
@@ -159,39 +108,39 @@ class keycloak:
 
         Parameters:
 
-        args
+        argparse.Namespace args - object with command-line arguments as attributes
 
         Returns: None
         """        
-        imgList = ["key.img", "key.img.gz"]
+        # remove existing images
+        imgList = [self.imgName, self.zipName]
         for img in imgList:
-            # get the location of the singularity image
-            imgPath = '/'.join(('.', img))
-            imgName = pkg_resources.resource_filename(self.pkgName, imgPath)
-            # check if the image already exists
-            duplicateImg = pkg_resources.resource_exists(self.pkgName, imgPath)
-            # remove the existing image if 
-            # the override argument is given
+            # check if the compressed/uncompressed image already exists
+            duplicateImg = os.path.exists(img)
+            # remove the existing image
+            # images that have already been executed cannot be re-executed
             if duplicateImg:
-                os.remove(imgName)
+                os.remove(img)
 
+        # download the compressed singularity image
         gitUrl = "https://github.com/DaleDupont/singularity-keycloak/releases/download/0.0.1/key.img.gz"
         subprocess.call(["wget", gitUrl, "-P", self.keycloakDir])
 
-
-        zipPath = '/'.join(('.', "key.img.gz"))
-        zipName = pkg_resources.resource_filename(self.pkgName, zipPath)
-        subprocess.call(["gunzip", zipName])
-
-        keycloakConfigPath = '/'.join(('.', 'keycloakConfig.json'))
-        configPath = pkg_resources.resource_filename(self.pkgName, keycloakConfigPath)
+        # decompress the compressed singularity image
+        subprocess.call(["gunzip", self.zipName])
 
         # set the environment variables to use
         # inside the container
-
+        # PORT - Port number Keycloak listens to
+        # IPADDR - IP address of keycloak server
+        # REALM_NAME - Realm name
+        # ADMIN_USERNAME - Admin account username
+        # ADMIN_PASSWORD - Admin account password
+        # USER_USERNAME - User account username 
+        # USER_PASSWORD - User account password
         envList = [("SINGULARITYENV_PORT", args.keycloakPort), 
                    ("SINGULARITYENV_IPADDR", args.keycloakIP), 
-                   ("SINGULARITYENV_CONFIGFILE", configPath), 
+                   ("SINGULARITYENV_CONFIGFILE", self.configJson), 
                    ("SINGULARITYENV_REALM_NAME", args.realmName), 
                    ("SINGULARITYENV_ADMIN_USERNAME", args.adminUsername), 
                    ("SINGULARITYENV_ADMIN_PASSWORD", args.adminPassword), 
@@ -201,9 +150,8 @@ class keycloak:
         for envVar in envList:
             os.environ[envVar[0]] = envVar[1]
 
-        imgPath = '/'.join(('.', 'key.img'))
-        imgName = pkg_resources.resource_filename(self.pkgName, imgPath)
-        subprocess.Popen(["singularity", "run", "--writable", imgName])
+        # execute the image
+        subprocess.Popen(["singularity", "run", "--writable", self.imgName])
 
 
     def config(self, args):
@@ -215,17 +163,16 @@ class keycloak:
 
         Parameters:
 
-        argsObject args - An object containing the command-line arguments as attributes
+        argparse.Namespace args - An object containing the command-line arguments as attributes
 
         Returns: None
         """        
-        keycloakConfigPath = '/'.join(('.', 'keycloakConfig.json'))
-        configPath = pkg_resources.resource_filename(self.pkgName, keycloakConfigPath)
-
-        #configFile = pkg_resources.resource_stream(self.pkgName, keycloakConfigPath)
-        with open(configPath, 'r') as configFile:
+        # load the configuration file
+        with open(self.configJson, 'r') as configFile:
+            # load the configuration data from the file
             configData = json.load(configFile)
 
+            # update IP and ports of authenticated servers
             ga4ghUrl = "http://" + args.ga4ghIP + ":" + args.ga4ghPort + "/"
             funnelUrl = "http://" + args.funnelIP + ":" + args.funnelPort + "/"
 
@@ -262,5 +209,6 @@ class keycloak:
             configData[0]["users"][0]["username"] = args.userUsername
             configData[1]["users"][0]["username"] = args.adminUsername
 
-        with open(configPath, "w") as configFile:
+        # write the configuration data to the file
+        with open(self.configJson, "w") as configFile:
             json.dump(configData, configFile, indent=1)
